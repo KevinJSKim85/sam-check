@@ -1,0 +1,19 @@
+0 verbose cli /opt/homebrew/Cellar/node/25.8.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.11.0
+2 info using node@v25.8.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/kevinmacbookpro/Documents/sam-check/.npmrc
+5 silly config load:file:/Users/kevinmacbookpro/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm view next-auth dist-tags
+8 verbose argv "view" "next-auth" "dist-tags" "--json" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:/Users/kevinmacbookpro/Documents/sam-check/.npm-cache/_logs/2026-03-16T16_37_14_903Z-
+10 verbose logfile /Users/kevinmacbookpro/Documents/sam-check/.npm-cache/_logs/2026-03-16T16_37_14_903Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET 200 https://registry.npmjs.org/next-auth 417ms (cache miss)
+13 verbose cwd /Users/kevinmacbookpro/Documents/sam-check
+14 verbose os Darwin 25.3.0
+15 verbose node v25.8.0
+16 verbose npm  v11.11.0
+17 verbose exit 0
+18 info ok

@@ -20,6 +20,11 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        cta: "bg-cta text-white hover:bg-cta-600 shadow-md font-semibold",
+        accent: "bg-accent text-white hover:bg-accent-600",
+        socialNaver: "bg-[#03C75A] text-white hover:bg-[#02b351]",
+        socialKakao: "bg-[#FEE500] text-[#3C1E1E] hover:bg-[#e6cf00] font-medium",
+        socialGoogle: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 shadow-sm",
       },
       size: {
         default:
