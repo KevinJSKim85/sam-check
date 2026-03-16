@@ -2,6 +2,7 @@ import { use } from 'react';
 import { auth } from '@/auth';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { prisma } from '@/lib/db';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/user-menu';
@@ -11,6 +12,16 @@ export function Header() {
   const session = use(auth());
   const tCommon = useTranslations('common');
   const tNav = useTranslations('nav');
+  const unreadCount = use(
+    session?.user
+      ? prisma.message.count({
+          where: {
+            receiverId: session.user.id,
+            isRead: false,
+          },
+        })
+      : Promise.resolve(0)
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/20 bg-primary text-white shadow-sm">
@@ -25,6 +36,17 @@ export function Header() {
             </Link>
             <Link href="/tutors" className="text-white/90 transition hover:text-white">
               {tNav('findTutor')}
+            </Link>
+            <Link
+              href={session?.user ? '/messages' : '/auth/login'}
+              className="inline-flex items-center gap-1 text-white/90 transition hover:text-white"
+            >
+              {tNav('messages')}
+              {unreadCount > 0 ? (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : null}
             </Link>
           </nav>
         </div>

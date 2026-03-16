@@ -1,7 +1,10 @@
-import { CircleHelp, MessageSquare, Monitor, Star, UserRound } from 'lucide-react'
+import { CircleHelp, MessageSquare, Monitor, UserRound } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
+import { ReviewCard } from '@/components/features/reviews/review-card'
+import { ReviewForm } from '@/components/features/reviews/review-form'
+import { StarDisplay } from '@/components/features/reviews/star-display'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,15 +34,6 @@ function getCurriculumLabel(value: string) {
   return curriculum?.label ?? value
 }
 
-function renderStars(rating: number) {
-  return [1, 2, 3, 4, 5].map((star) => (
-    <Star
-      key={star}
-      className={star <= Math.round(rating) ? 'size-4 fill-amber-400 text-amber-400' : 'size-4 text-slate-300'}
-    />
-  ))
-}
-
 export default async function TutorDetailPage({
   params,
 }: {
@@ -48,6 +42,7 @@ export default async function TutorDetailPage({
   const { locale, id } = await params
   const session = await auth()
   const tTutor = await getTranslations('tutor')
+  const tReview = await getTranslations('review')
   const activeLocale = locale
 
   const tutor = await prisma.tutorProfile.findFirst({
@@ -93,6 +88,15 @@ export default async function TutorDetailPage({
 
   const messageHref = session?.user ? `/messages/${tutor.userId}` : '/auth/login'
   const visibleCredentialsMobile = tutor.credentials.slice(0, 3)
+  const hasReviewed = Boolean(
+    session?.user && tutor.reviews.some((review) => review.authorId === session.user.id)
+  )
+  const canWriteReview = Boolean(
+    session?.user &&
+      session.user.role === 'STUDENT' &&
+      session.user.id !== tutor.userId &&
+      !hasReviewed
+  )
 
   return (
     <>
@@ -197,11 +201,16 @@ export default async function TutorDetailPage({
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-slate-900">{tTutor('reviews')}</h2>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-0.5">{renderStars(tutor.averageRating)}</div>
+              <StarDisplay rating={tutor.averageRating} />
               <p className="text-sm font-semibold text-slate-800">{tutor.averageRating.toFixed(1)}</p>
               <p className="text-sm text-body">({tutor.totalReviews})</p>
             </div>
           </div>
+
+          {canWriteReview ? <ReviewForm tutorProfileId={tutor.id} /> : null}
+          {!canWriteReview && hasReviewed ? (
+            <p className="text-sm text-slate-600">{tReview('alreadyReviewed')}</p>
+          ) : null}
 
           {tutor.reviews.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-body">
@@ -210,21 +219,18 @@ export default async function TutorDetailPage({
           ) : (
             <div className="space-y-3">
               {tutor.reviews.map((review) => (
-                <Card key={review.id} className="border border-slate-200 bg-slate-50 py-0">
-                  <CardContent className="space-y-2 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Avatar size="sm">
-                          <AvatarImage src={review.author.image ?? undefined} alt={review.author.name ?? 'Reviewer'} />
-                          <AvatarFallback>{getInitials(review.author.name)}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-sm font-semibold text-slate-800">{review.author.name ?? 'Student'}</p>
-                      </div>
-                      <div className="flex items-center gap-0.5">{renderStars(review.rating)}</div>
-                    </div>
-                    <p className="text-sm text-body">{review.content}</p>
-                  </CardContent>
-                </Card>
+                <ReviewCard
+                  key={review.id}
+                  locale={locale}
+                  review={{
+                    id: review.id,
+                    authorName: review.author.name,
+                    authorImage: review.author.image,
+                    rating: review.rating,
+                    content: review.content,
+                    createdAt: review.createdAt.toISOString(),
+                  }}
+                />
               ))}
             </div>
           )}
