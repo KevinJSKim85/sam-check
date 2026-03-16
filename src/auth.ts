@@ -42,6 +42,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 				return "/auth/error?error=EmailRequired";
 			}
 
+			// Auto-promote users to ADMIN if their email is in ADMIN_EMAILS env var
+			if (user.email && user.id) {
+				const adminEmails = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || [];
+				if (adminEmails.includes(user.email)) {
+					await prisma.user.update({
+						where: { id: user.id },
+						data: { role: "ADMIN" },
+					});
+				}
+			}
+
 			return true;
 		},
 		async jwt({ token, trigger }) {
