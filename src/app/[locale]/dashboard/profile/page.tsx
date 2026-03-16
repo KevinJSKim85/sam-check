@@ -1,0 +1,509 @@
+'use client'
+
+import { useLocale, useTranslations } from 'next-intl'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { CURRICULA, SUBJECTS } from '@/lib/constants'
+import { tutorProfileSchema } from '@/schemas'
+
+type UniversityEntry = {
+  id: string
+  status: 'ENROLLED' | 'GRADUATED'
+  enrollmentYear: number
+  schoolName: string
+  major: string
+  isPrimary: boolean
+}
+
+type ProfileResponse = {
+  user: {
+    name: string | null
+  }
+  tutorProfile: {
+    headline: string | null
+    bio: string | null
+    highSchool?: string | null
+    activities?: string | null
+    subjects: string[]
+    curricula: string[]
+    hourlyRate: number | null
+    teachingMode: 'ONLINE' | 'OFFLINE' | 'BOTH'
+    university: string | null
+    degree: string | null
+    isPublished: boolean
+    universities?: Array<Omit<UniversityEntry, 'id'>>
+  } | null
+}
+
+function splitName(name: string | null) {
+  if (!name) {
+    return { firstName: '', lastName: '' }
+  }
+
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '' }
+  }
+
+  return {
+    firstName: parts.slice(0, -1).join(' '),
+    lastName: parts.at(-1) ?? '',
+  }
+}
+
+function createUniversityEntry(isPrimary = false): UniversityEntry {
+  return {
+    id: crypto.randomUUID(),
+    status: 'ENROLLED',
+    enrollmentYear: new Date().getFullYear(),
+    schoolName: '',
+    major: '',
+    isPrimary,
+  }
+}
+
+export default function TutorProfilePage() {
+  const tTutor = useTranslations('tutor')
+  const locale = useLocale()
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [headline, setHeadline] = useState('')
+  const [bio, setBio] = useState('')
+  const [highSchool, setHighSchool] = useState('')
+  const [activities, setActivities] = useState('')
+  const [universities, setUniversities] = useState<UniversityEntry[]>([createUniversityEntry(true)])
+  const [subjects, setSubjects] = useState<string[]>([])
+  const [curricula, setCurricula] = useState<string[]>([])
+  const [hourlyRate, setHourlyRate] = useState('50000')
+  const [teachingMode, setTeachingMode] = useState<'ONLINE' | 'OFFLINE' | 'BOTH'>('BOTH')
+  const [isPublished, setIsPublished] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadProfile() {
+      try {
+        const response = await fetch('/api/tutors/me')
+        if (!response.ok) {
+          throw new Error('프로필을 불러오지 못했습니다.')
+        }
+
+        const data = (await response.json()) as ProfileResponse
+        if (!mounted) {
+          return
+        }
+
+        const names = splitName(data.user.name)
+        setFirstName(names.firstName)
+        setLastName(names.lastName)
+
+        const profile = data.tutorProfile
+        if (!profile) {
+          setLoading(false)
+          return
+        }
+
+        setHeadline(profile.headline ?? '')
+        setBio(profile.bio ?? '')
+        setHighSchool(profile.highSchool ?? '')
+        setActivities(profile.activities ?? '')
+        setSubjects(profile.subjects)
+        setCurricula(profile.curricula)
+        setHourlyRate(profile.hourlyRate ? String(profile.hourlyRate) : '50000')
+        setTeachingMode(profile.teachingMode)
+        setIsPublished(profile.isPublished)
+
+        if (profile.universities && profile.universities.length > 0) {
+          setUniversities(
+            profile.universities.slice(0, 3).map((item) => ({
+              ...item,
+              id: crypto.randomUUID(),
+            }))
+          )
+        } else if (profile.university || profile.degree) {
+          setUniversities([
+            {
+              ...createUniversityEntry(true),
+              schoolName: profile.university ?? '',
+              major: profile.degree ?? '',
+            },
+          ])
+        }
+      } catch (loadError) {
+        if (mounted) {
+          setError(loadError instanceof Error ? loadError.message : '오류가 발생했습니다.')
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadProfile()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const parsedHourlyRate = useMemo(() => {
+    const value = Number(hourlyRate)
+    return Number.isFinite(value) ? value : 0
+  }, [hourlyRate])
+
+  const toggleSubject = (value: string) => {
+    setSubjects((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    )
+  }
+
+  const toggleCurriculum = (value: string) => {
+    setCurricula((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    )
+  }
+
+  const setPrimaryUniversity = (index: number) => {
+    setUniversities((prev) => prev.map((item, idx) => ({ ...item, isPrimary: idx === index })))
+  }
+
+  const updateUniversity = <K extends keyof UniversityEntry>(index: number, key: K, value: UniversityEntry[K]) => {
+    setUniversities((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item))
+    )
+  }
+
+  const addUniversity = () => {
+    setUniversities((prev) => {
+      if (prev.length >= 3) {
+        return prev
+      }
+
+      return [...prev, createUniversityEntry(prev.length === 0)]
+    })
+  }
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    const cleanedUniversities = universities
+      .map((item) => ({
+        status: item.status,
+        enrollmentYear: item.enrollmentYear,
+        schoolName: item.schoolName.trim(),
+        major: item.major.trim(),
+        isPrimary: item.isPrimary,
+      }))
+      .filter((item) => item.schoolName && item.major)
+
+    const primary =
+      cleanedUniversities.find((item) => item.isPrimary) ?? cleanedUniversities[0]
+
+    const payload = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      headline: headline.trim(),
+      bio: bio.trim(),
+      highSchool: highSchool.trim(),
+      universities: cleanedUniversities,
+      activities: activities.trim(),
+      subjects,
+      curricula,
+      hourlyRate: parsedHourlyRate,
+      teachingMode,
+      university: primary?.schoolName,
+      degree: primary?.major,
+      isPublished,
+    }
+
+    const validationResult = tutorProfileSchema.safeParse(payload)
+    if (!validationResult.success) {
+      setError(validationResult.error.issues[0]?.message ?? '입력값을 확인해주세요.')
+      setSaving(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/tutors/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? '저장에 실패했습니다.')
+      }
+
+      setSuccess('프로필이 저장되었습니다.')
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : '오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="mx-auto w-full max-w-4xl px-4 py-10 text-sm text-body sm:px-6">불러오는 중...</div>
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+      <Card className="border-primary/20 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">튜터 프로필 수정</CardTitle>
+          <p className="text-sm text-body">공개 프로필과 노출 정보는 여기에서 관리할 수 있습니다.</p>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-8" onSubmit={onSubmit}>
+            <section className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="first-name">English First Name *</label>
+                <Input id="first-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} required />
+              </div>
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="last-name">English Last Name *</label>
+                <Input id="last-name" value={lastName} onChange={(event) => setLastName(event.target.value)} required />
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="headline">한줄 소개</label>
+                <Input
+                  id="headline"
+                  value={headline}
+                  onChange={(event) => setHeadline(event.target.value)}
+                  maxLength={100}
+                  placeholder="튜터 강점을 한 문장으로 작성해주세요"
+                />
+                <span className="text-xs text-muted-foreground">{headline.length}/100</span>
+              </div>
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="bio">자기소개</label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  maxLength={2000}
+                  rows={8}
+                  placeholder="수업 방식, 강점, 학생과의 소통 스타일 등을 작성해주세요"
+                />
+                <span className="text-xs text-muted-foreground">{bio.length}/2000</span>
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-xl border border-slate-200 p-4">
+              <h2 className="text-base font-semibold text-slate-900">학력</h2>
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="high-school">출신 고등학교</label>
+                <Input
+                  id="high-school"
+                  value={highSchool}
+                  onChange={(event) => setHighSchool(event.target.value)}
+                  placeholder="예: Seoul International School"
+                />
+              </div>
+
+              {universities.map((entry, index) => (
+                <div key={entry.id} className="space-y-3 rounded-lg border border-slate-200 p-3">
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`status-${index}`}
+                        checked={entry.status === 'ENROLLED'}
+                        onChange={() => updateUniversity(index, 'status', 'ENROLLED')}
+                      />
+                      재학중
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`status-${index}`}
+                        checked={entry.status === 'GRADUATED'}
+                        onChange={() => updateUniversity(index, 'status', 'GRADUATED')}
+                      />
+                      졸업
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1 text-sm">
+                      <label className="font-medium text-slate-900" htmlFor={`enrollment-year-${entry.id}`}>입학 연도</label>
+                      <Input
+                        id={`enrollment-year-${entry.id}`}
+                        type="number"
+                        value={entry.enrollmentYear}
+                        onChange={(event) => updateUniversity(index, 'enrollmentYear', Number(event.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <label className="font-medium text-slate-900" htmlFor={`school-name-${entry.id}`}>학교명</label>
+                      <Input
+                        id={`school-name-${entry.id}`}
+                        value={entry.schoolName}
+                        onChange={(event) => updateUniversity(index, 'schoolName', event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1 text-sm sm:col-span-2">
+                      <label className="font-medium text-slate-900" htmlFor={`major-${entry.id}`}>전공</label>
+                      <Input
+                        id={`major-${entry.id}`}
+                        value={entry.major}
+                        onChange={(event) => updateUniversity(index, 'major', event.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <label className="inline-flex items-center gap-2 text-sm text-body">
+                    <input
+                      type="checkbox"
+                      checked={entry.isPrimary}
+                      onChange={() => setPrimaryUniversity(index)}
+                    />
+                    이 학력을 프로필 대표 학력으로 설정
+                  </label>
+                </div>
+              ))}
+
+              <Button type="button" variant="outline" onClick={addUniversity} disabled={universities.length >= 3}>
+                + 대학(원) 추가
+              </Button>
+            </section>
+
+            <section className="space-y-4">
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="activities">경력 및 기타활동</label>
+                <Textarea
+                  id="activities"
+                  value={activities}
+                  onChange={(event) => setActivities(event.target.value)}
+                  rows={5}
+                  maxLength={2000}
+                  placeholder="강의 경력, 수상 내역, 동아리/프로젝트 활동 등을 입력해주세요"
+                />
+              </div>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-900">{tTutor('subjects')}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {SUBJECTS.map((subject) => (
+                    <label key={subject.value} className="inline-flex items-center gap-2 text-sm text-body">
+                      <input
+                        type="checkbox"
+                        checked={subjects.includes(subject.value)}
+                        onChange={() => toggleSubject(subject.value)}
+                      />
+                      {locale === 'ko' ? subject.label.ko : subject.label.en}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-900">{tTutor('curricula')}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {CURRICULA.map((item) => (
+                    <label key={item.value} className="inline-flex items-center gap-2 text-sm text-body">
+                      <input
+                        type="checkbox"
+                        checked={curricula.includes(item.value)}
+                        onChange={() => toggleCurriculum(item.value)}
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1 text-sm">
+                <label className="font-medium text-slate-900" htmlFor="hourly-rate">시급 (KRW)</label>
+                <Input
+                  id="hourly-rate"
+                  type="number"
+                  min={10000}
+                  max={500000}
+                  value={hourlyRate}
+                  onChange={(event) => setHourlyRate(event.target.value)}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {parsedHourlyRate > 0 ? `${parsedHourlyRate.toLocaleString('ko-KR')}원` : '0원'}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-sm">
+                <p className="font-medium text-slate-900">수업 방식</p>
+                <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="teaching-mode"
+                      checked={teachingMode === 'ONLINE'}
+                      onChange={() => setTeachingMode('ONLINE')}
+                    />
+                    온라인
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="teaching-mode"
+                      checked={teachingMode === 'OFFLINE'}
+                      onChange={() => setTeachingMode('OFFLINE')}
+                    />
+                    대면
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="teaching-mode"
+                      checked={teachingMode === 'BOTH'}
+                      onChange={() => setTeachingMode('BOTH')}
+                    />
+                    온라인/대면
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-slate-200 p-4">
+              <label className="inline-flex items-center gap-2 text-sm text-slate-900">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(event) => setIsPublished(event.target.checked)}
+                />
+                프로필 공개
+              </label>
+            </section>
+
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
+
+            <Button type="submit" variant="cta" disabled={saving}>
+              {saving ? '저장 중...' : '저장'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
