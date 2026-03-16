@@ -5,6 +5,8 @@ import { routing } from '@/i18n/routing';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AuthSessionProvider } from '@/components/providers/session-provider';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -30,7 +32,7 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
   }
   const messages = await getMessages();
@@ -42,7 +44,11 @@ export default async function LocaleLayout({
       >
         <AuthSessionProvider>
           <NextIntlClientProvider messages={messages}>
-            {children}
+            <div className="flex min-h-screen flex-col bg-slate-50">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
           </NextIntlClientProvider>
         </AuthSessionProvider>
       </body>
