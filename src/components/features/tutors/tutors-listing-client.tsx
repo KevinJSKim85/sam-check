@@ -6,10 +6,10 @@ import {
 	ChevronRight,
 	Search,
 	SlidersHorizontal,
+	X,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { TutorCard } from "@/components/features/tutors/tutor-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -72,6 +72,12 @@ function buildPageNumbers(current: number, total: number) {
 	return Array.from(pages).sort((a, b) => a - b);
 }
 
+function formatPriceLabel(value: string) {
+	const amount = Number(value);
+	if (!Number.isFinite(amount)) return value;
+	return `₩${amount.toLocaleString()}`;
+}
+
 function FiltersPanel({
 	locale,
 	selectedCurricula,
@@ -109,7 +115,12 @@ function FiltersPanel({
 				<h2 className="text-sm font-semibold text-slate-900">
 					{tTutor("filter")}
 				</h2>
-				<Button variant="ghost" size="sm" onClick={onClear}>
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={onClear}
+					className="min-h-11"
+				>
 					{tTutor("clearFilters")}
 				</Button>
 			</div>
@@ -122,7 +133,7 @@ function FiltersPanel({
 					{CURRICULA.map((curriculum) => (
 						<label
 							key={curriculum.value}
-							className="flex items-center gap-2 text-sm text-slate-700"
+							className="flex min-h-11 items-center gap-2 py-1 text-sm text-slate-700"
 						>
 							<input
 								type="checkbox"
@@ -144,7 +155,7 @@ function FiltersPanel({
 					{SUBJECTS.map((subject) => (
 						<label
 							key={subject.value}
-							className="flex items-center gap-2 text-sm text-slate-700"
+							className="flex min-h-11 items-center gap-2 py-1 text-sm text-slate-700"
 						>
 							<input
 								type="checkbox"
@@ -167,11 +178,13 @@ function FiltersPanel({
 						value={minPrice}
 						onChange={(event) => onPriceChange("minPrice", event.target.value)}
 						placeholder="10000"
+						className="h-11"
 					/>
 					<Input
 						value={maxPrice}
 						onChange={(event) => onPriceChange("maxPrice", event.target.value)}
 						placeholder="200000"
+						className="h-11"
 					/>
 				</div>
 			</div>
@@ -181,7 +194,7 @@ function FiltersPanel({
 					{tTutor("teachingMode")}
 				</h3>
 				<div className="space-y-2 text-sm text-slate-700">
-					<label className="flex items-center gap-2">
+					<label className="flex min-h-11 items-center gap-2 py-1">
 						<input
 							type="radio"
 							name="teachingMode"
@@ -189,9 +202,9 @@ function FiltersPanel({
 							checked={teachingMode === ""}
 							onChange={() => onTeachingModeChange("")}
 						/>
-						All
+						{tTutor("allTeachingModes")}
 					</label>
-					<label className="flex items-center gap-2">
+					<label className="flex min-h-11 items-center gap-2 py-1">
 						<input
 							type="radio"
 							name="teachingMode"
@@ -201,7 +214,7 @@ function FiltersPanel({
 						/>
 						{tTutor("online")}
 					</label>
-					<label className="flex items-center gap-2">
+					<label className="flex min-h-11 items-center gap-2 py-1">
 						<input
 							type="radio"
 							name="teachingMode"
@@ -211,7 +224,7 @@ function FiltersPanel({
 						/>
 						{tTutor("offline")}
 					</label>
-					<label className="flex items-center gap-2">
+					<label className="flex min-h-11 items-center gap-2 py-1">
 						<input
 							type="radio"
 							name="teachingMode"
@@ -224,8 +237,8 @@ function FiltersPanel({
 				</div>
 			</div>
 
-			<label className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-				<span className="font-medium text-slate-700">인증된 튜터만 보기</span>
+			<label className="flex min-h-11 items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+				<span className="font-medium text-slate-700">{tTutor("verifiedOnly")}</span>
 				<input
 					type="checkbox"
 					className="size-4 rounded border-slate-300 text-primary focus:ring-primary"
@@ -293,6 +306,15 @@ export function TutorsListingClient({
 		[pathname, router],
 	);
 
+	useEffect(() => {
+		const onPopState = () => {
+			setSearchState(new URLSearchParams(window.location.search));
+		};
+
+		window.addEventListener("popstate", onPopState);
+		return () => window.removeEventListener("popstate", onPopState);
+	}, []);
+
 	const updateParam = useCallback(
 		(key: string, value: string | null, resetPage = true) => {
 			const next = new URLSearchParams(searchState.toString());
@@ -336,7 +358,7 @@ export function TutorsListingClient({
 			if (keywordInput !== keywordFromUrl) {
 				updateParam("keyword", keywordInput.trim() || null);
 			}
-		}, 350);
+		}, 300);
 
 		return () => window.clearTimeout(timer);
 	}, [keywordFromUrl, keywordInput, updateParam]);
@@ -391,6 +413,86 @@ export function TutorsListingClient({
 		data.pagination.totalPages,
 	);
 
+	const activeFilterTags = useMemo(() => {
+		const tags: Array<{
+			key: string;
+			label: string;
+			onRemove: () => void;
+		}> = [];
+
+		selectedCurricula.forEach((item) => {
+			tags.push({
+				key: `curricula-${item}`,
+				label: getCurriculumLabel(item),
+				onRemove: () => updateArrayParam("curricula", item),
+			});
+		});
+
+		selectedSubjects.forEach((item) => {
+			tags.push({
+				key: `subjects-${item}`,
+				label: getSubjectLabel(item, locale),
+				onRemove: () => updateArrayParam("subjects", item),
+			});
+		});
+
+		if (minPrice) {
+			tags.push({
+				key: "minPrice",
+				label:
+					locale === "ko"
+						? `${formatPriceLabel(minPrice)} 이상`
+						: `${formatPriceLabel(minPrice)}+`,
+				onRemove: () => updateParam("minPrice", null),
+			});
+		}
+
+		if (maxPrice) {
+			tags.push({
+				key: "maxPrice",
+				label:
+					locale === "ko"
+						? `${formatPriceLabel(maxPrice)} 이하`
+						: `up to ${formatPriceLabel(maxPrice)}`,
+				onRemove: () => updateParam("maxPrice", null),
+			});
+		}
+
+		if (teachingMode) {
+			tags.push({
+				key: "teachingMode",
+				label:
+					teachingMode === "ONLINE"
+						? tTutor("online")
+						: teachingMode === "OFFLINE"
+							? tTutor("offline")
+							: tTutor("both"),
+				onRemove: () => updateParam("teachingMode", null),
+			});
+		}
+
+		if (verifiedOnly) {
+			tags.push({
+				key: "verifiedOnly",
+				label: tTutor("verifiedOnly"),
+				onRemove: () => updateParam("verifiedOnly", null),
+			});
+		}
+
+		return tags;
+	}, [
+		locale,
+		maxPrice,
+		minPrice,
+		tTutor,
+		teachingMode,
+		selectedCurricula,
+		selectedSubjects,
+		updateArrayParam,
+		updateParam,
+		verifiedOnly,
+	]);
+
 	return (
 		<div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 			<div className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -404,26 +506,27 @@ export function TutorsListingClient({
 					/>
 				</div>
 
-				{(selectedCurricula.length > 0 || selectedSubjects.length > 0) && (
+				{activeFilterTags.length > 0 && (
 					<div className="mt-4 flex flex-wrap gap-2">
-						{selectedCurricula.map((item) => (
-							<Badge
-								key={item}
-								variant="outline"
-								className="border-primary/30 bg-primary-50 text-primary-800"
+						{activeFilterTags.map((tag) => (
+							<button
+								key={tag.key}
+								type="button"
+								onClick={tag.onRemove}
+								className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/30 bg-primary-50 px-3 py-1.5 text-sm text-primary-800"
 							>
-								{getCurriculumLabel(item)}
-							</Badge>
+								{tag.label}
+								<X className="size-3.5" />
+							</button>
 						))}
-						{selectedSubjects.map((item) => (
-							<Badge
-								key={item}
-								variant="outline"
-								className="border-accent/30 bg-accent-50 text-accent-800"
-							>
-								{getSubjectLabel(item, locale)}
-							</Badge>
-						))}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => replaceSearchState(new URLSearchParams())}
+							className="min-h-11"
+						>
+							{tTutor("clearFilters")}
+						</Button>
 					</div>
 				)}
 			</div>
@@ -462,7 +565,7 @@ export function TutorsListingClient({
 									render={
 										<Button
 											variant="outline"
-											className="inline-flex lg:hidden"
+											className="inline-flex min-h-11 lg:hidden"
 										/>
 									}
 								>
@@ -510,14 +613,14 @@ export function TutorsListingClient({
 								value={sort}
 								onValueChange={(value) => updateParam("sort", value)}
 							>
-								<SelectTrigger className="w-[150px] bg-white">
+								<SelectTrigger className="h-11 w-[150px] bg-white">
 									<SelectValue placeholder={tTutor("sortBy")} />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="newest">최신등록순</SelectItem>
-									<SelectItem value="rating">평점순</SelectItem>
-									<SelectItem value="priceLow">시급낮은순</SelectItem>
-									<SelectItem value="priceHigh">시급높은순</SelectItem>
+									<SelectItem value="newest">{tTutor("sortNewest")}</SelectItem>
+									<SelectItem value="rating">{tTutor("sortRating")}</SelectItem>
+									<SelectItem value="priceLow">{tTutor("sortPriceLow")}</SelectItem>
+									<SelectItem value="priceHigh">{tTutor("sortPriceHigh")}</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
@@ -534,7 +637,7 @@ export function TutorsListingClient({
 						</div>
 					) : data.items.length === 0 ? (
 						<div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-							<p className="text-base text-body">검색 결과가 없습니다</p>
+							<p className="text-base text-body">{tTutor("noTutors")}</p>
 						</div>
 					) : (
 						<>

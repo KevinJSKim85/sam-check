@@ -1,7 +1,8 @@
-import { CircleHelp, MessageSquare, Monitor, UserRound } from 'lucide-react'
+import { MessageSquare, Monitor, UserRound } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
+import { BadgeList } from '@/components/features/badges/badge-list'
 import { ReviewCard } from '@/components/features/reviews/review-card'
 import { ReviewForm } from '@/components/features/reviews/review-form'
 import { StarDisplay } from '@/components/features/reviews/star-display'
@@ -12,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Link } from '@/i18n/routing'
 import { CREDENTIAL_TYPE_LABELS, CURRICULA, SUBJECTS, TEACHING_MODE_LABELS } from '@/lib/constants'
 import { prisma } from '@/lib/db'
+import { formatKrw } from '@/lib/format'
 
 function getInitials(name: string | null) {
   if (!name) return 'T'
@@ -87,7 +89,6 @@ export default async function TutorDetailPage({
   }
 
   const messageHref = session?.user ? `/messages/${tutor.userId}` : '/auth/login'
-  const visibleCredentialsMobile = tutor.credentials.slice(0, 3)
   const hasReviewed = Boolean(
     session?.user && tutor.reviews.some((review) => review.authorId === session.user.id)
   )
@@ -107,12 +108,12 @@ export default async function TutorDetailPage({
             <div className="absolute -bottom-20 left-8 h-44 w-44 rounded-full bg-cta/30 blur-3xl" />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
               <Avatar className="size-24 ring-4 ring-white/35 sm:size-28" size="lg">
-                <AvatarImage src={tutor.user.image ?? undefined} alt={tutor.user.name ?? 'Tutor photo'} />
+                <AvatarImage src={tutor.user.image ?? undefined} alt={tutor.user.name ?? tTutor('unknownTutor')} />
                 <AvatarFallback className="text-3xl font-bold text-primary-700">{getInitials(tutor.user.name)}</AvatarFallback>
               </Avatar>
 
               <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{tutor.user.name ?? 'Tutor'}</h1>
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{tutor.user.name ?? tTutor('unknownTutor')}</h1>
                 <p className="text-white/90">{tutor.university ?? '-'}</p>
                 {tutor.headline ? <p className="max-w-3xl text-sm text-white/85 sm:text-base">{tutor.headline}</p> : null}
               </div>
@@ -121,30 +122,24 @@ export default async function TutorDetailPage({
 
           <div className="space-y-4 px-6 py-5 sm:px-10">
             <div className="space-y-2">
-              <h2 className="text-sm font-semibold text-slate-700">Credentials</h2>
-              <div className="flex flex-wrap gap-2 md:hidden">
-                {visibleCredentialsMobile.map((credential) => (
-                  <Badge key={credential.id} variant="verified" className="h-auto rounded-full px-3 py-1 text-sm">
-                    {CREDENTIAL_TYPE_LABELS[credential.type][activeLocale === 'ko' ? 'ko' : 'en']} {credential.scoreValue ?? credential.label} ✓
-                    <CircleHelp className="size-3.5" />
-                  </Badge>
-                ))}
-              </div>
-              <div className="hidden flex-wrap gap-2 md:flex">
-                {tutor.credentials.map((credential) => (
-                  <Badge key={credential.id} variant="verified" className="h-auto rounded-full px-3 py-1 text-sm">
-                    {CREDENTIAL_TYPE_LABELS[credential.type][activeLocale === 'ko' ? 'ko' : 'en']} {credential.scoreValue ?? credential.label} ✓
-                    <CircleHelp className="size-3.5" />
-                  </Badge>
-                ))}
-              </div>
+              <h2 className="text-sm font-semibold text-slate-700">{tTutor('credentials')}</h2>
+              <BadgeList
+                credentials={tutor.credentials.map((credential) => ({
+                  ...credential,
+                  createdAt: credential.createdAt.toISOString(),
+                  label:
+                    CREDENTIAL_TYPE_LABELS[credential.type][
+                      activeLocale === 'ko' ? 'ko' : 'en'
+                    ],
+                }))}
+              />
             </div>
 
             <div className="grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
               <div className="rounded-xl border border-primary/20 bg-primary-50 p-4">
                 <p className="text-xs font-medium text-primary-700">{tTutor('hourlyRate')}</p>
                 <p className="mt-1 text-2xl font-bold text-primary-900">
-                  {tutor.hourlyRate ? `₩${tutor.hourlyRate.toLocaleString()}/시간` : '-'}
+                  {tutor.hourlyRate ? `${formatKrw(tutor.hourlyRate, locale)}/${tTutor('perHour')}` : '-'}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -165,7 +160,7 @@ export default async function TutorDetailPage({
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card className="border-slate-200 bg-white py-0 shadow-sm">
             <CardContent className="space-y-4 p-6">
-              <h2 className="text-xl font-semibold text-slate-900">About</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{tTutor('profileAbout')}</h2>
               <p className="text-body">{tutor.bio ?? '-'}</p>
             </CardContent>
           </Card>
@@ -237,7 +232,7 @@ export default async function TutorDetailPage({
         </section>
 
         <div className="hidden justify-end md:flex">
-          <Button variant="cta" size="lg" render={<Link href={messageHref} />}>
+          <Button variant="cta" size="lg" className="min-h-11" render={<Link href={messageHref} />}>
             <MessageSquare className="size-4" />
             {tTutor('sendMessage')}
           </Button>
@@ -245,7 +240,7 @@ export default async function TutorDetailPage({
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-6px_18px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
-        <Button variant="cta" size="lg" className="w-full" render={<Link href={messageHref} />}>
+        <Button variant="cta" size="lg" className="min-h-11 w-full" render={<Link href={messageHref} />}>
           <MessageSquare className="size-4" />
           {tTutor('sendMessage')}
         </Button>

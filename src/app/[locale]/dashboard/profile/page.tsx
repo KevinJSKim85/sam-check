@@ -381,7 +381,7 @@ export default function TutorProfilePage() {
                 </div>
               ))}
 
-              <Button type="button" variant="outline" onClick={addUniversity} disabled={universities.length >= 3}>
+              <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={addUniversity} disabled={universities.length >= 3}>
                 + 대학(원) 추가
               </Button>
             </section>
@@ -498,7 +498,7 @@ export default function TutorProfilePage() {
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
             {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
 
-            <Button type="submit" variant="cta" disabled={saving}>
+            <Button type="submit" variant="cta" className="min-h-11 w-full sm:w-auto" disabled={saving}>
               {saving ? '저장 중...' : '저장'}
             </Button>
           </form>

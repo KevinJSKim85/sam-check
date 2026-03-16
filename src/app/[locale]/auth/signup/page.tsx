@@ -22,8 +22,8 @@ export default function SignupPage() {
   const requiredChecked = role === 'TUTOR' ? privacyConsent && credentialConsent : privacyConsent;
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
-      <Card className="border-primary/15 shadow-md">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-2xl items-center px-4 py-12 sm:px-6">
+      <Card className="w-full border-primary/15 shadow-md">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">{t('signupTitle')}</CardTitle>
           <p className="text-sm text-body">{t('signupDescription')}</p>

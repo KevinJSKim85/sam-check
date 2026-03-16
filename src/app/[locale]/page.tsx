@@ -17,17 +17,17 @@ export default function HomePage() {
         <div className="absolute -bottom-20 left-16 h-52 w-52 rounded-full bg-cta/30 blur-2xl" />
         <div className="relative flex max-w-3xl flex-col gap-6">
           <Badge className="w-fit border-white/30 bg-white/15 text-white">{t('heroBadge')}</Badge>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t('heroTitle')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">{t('heroTitle')}</h1>
           <p className="max-w-xl text-base text-white/90 sm:text-lg">{t('heroDescription')}</p>
-          <div className="flex flex-wrap gap-3">
-            <Button variant="cta" size="lg" render={<Link href="/tutors" />}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Button variant="cta" size="lg" render={<Link href="/tutors" />} className="min-h-11 w-full sm:w-auto">
               {t('heroPrimaryCta')}
             </Button>
             <Button
               variant="outline"
               size="lg"
               render={<Link href="/auth/signup" />}
-              className="border-white/40 bg-white/10 text-white hover:bg-white/20"
+              className="min-h-11 w-full border-white/40 bg-white/10 text-white hover:bg-white/20 sm:w-auto"
             >
               {t('heroSecondaryCta')}
             </Button>
@@ -67,7 +67,7 @@ export default function HomePage() {
       <section>
         <h2 className="text-2xl font-bold text-slate-900">{t('subjectsTitle')}</h2>
         <p className="mt-2 text-body">{t('subjectsDescription')}</p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {SUBJECTS.map((subject) => (
             <Link
               key={subject.value}

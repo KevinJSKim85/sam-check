@@ -306,13 +306,13 @@ export default function CredentialsDashboardPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
       <Card className="border-primary/20 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <CardTitle className="text-2xl">{tCredential('myCredentials')}</CardTitle>
             <p className="mt-1 text-sm text-body">제출한 인증 상태를 확인하고 재제출을 관리하세요.</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger render={<Button variant="cta" />} onClick={resetForm}>
+            <DialogTrigger render={<Button variant="cta" className="min-h-11 w-full sm:w-auto" />} onClick={resetForm}>
               {tCredential('addCredential')}
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -460,11 +460,11 @@ export default function CredentialsDashboardPage() {
 
                 {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <div className="flex flex-col justify-end gap-2 sm:flex-row">
+                  <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => setDialogOpen(false)}>
                     닫기
                   </Button>
-                  <Button type="submit" variant="cta" disabled={saving || isApprovedTarget}>
+                  <Button type="submit" variant="cta" className="min-h-11 w-full sm:w-auto" disabled={saving || isApprovedTarget}>
                     {saving ? '제출 중...' : '제출'}
                   </Button>
                 </div>
@@ -504,15 +504,15 @@ export default function CredentialsDashboardPage() {
                   </div>
                 ) : null}
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {credential.status === 'REJECTED' ? (
-                    <Button type="button" variant="outline" onClick={() => openResubmit(credential)}>
+                    <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => openResubmit(credential)}>
                       {tCredential('resubmit')}
                     </Button>
                   ) : null}
 
                   {credential.status !== 'APPROVED' ? (
-                    <Button type="button" variant="destructive" onClick={() => handleDelete(credential)}>
+                    <Button type="button" variant="destructive" className="min-h-11 w-full sm:w-auto" onClick={() => handleDelete(credential)}>
                       삭제
                     </Button>
                   ) : null}

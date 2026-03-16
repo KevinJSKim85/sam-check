@@ -1,12 +1,14 @@
 'use client'
 
-import { BadgeCheck, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
+import { BadgeList } from '@/components/features/badges/badge-list'
 import { useLocale, useTranslations } from 'next-intl'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Link } from '@/i18n/routing'
 import { SUBJECTS, TEACHING_MODE_LABELS } from '@/lib/constants'
+import { formatKrw } from '@/lib/format'
 import type { TutorCard as TutorCardType } from '@/types/tutor'
 
 type TutorCardProps = {
@@ -48,8 +50,8 @@ export function TutorCard({ tutor }: TutorCardProps) {
       <Link href={`/tutors/${tutor.id}`} className="block">
         <div className="relative h-48 bg-gradient-to-br from-primary-100 via-primary-200 to-accent-100">
           <div className="flex h-full w-full items-center justify-center">
-            <Avatar className="size-28 ring-4 ring-white/70" size="lg">
-              <AvatarImage src={tutor.image ?? undefined} alt={tutor.name ?? 'Tutor photo'} className="rounded-full object-cover" />
+              <Avatar className="size-28 ring-4 ring-white/70" size="lg">
+              <AvatarImage src={tutor.image ?? undefined} alt={tutor.name ?? tTutor('unknownTutor')} className="rounded-full object-cover" />
               <AvatarFallback className="text-4xl font-bold text-primary-700/70">
                 {getInitials(tutor.name)}
               </AvatarFallback>
@@ -66,12 +68,12 @@ export function TutorCard({ tutor }: TutorCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <Link href={`/tutors/${tutor.id}`} className="text-lg font-semibold text-slate-900 hover:text-primary">
-              {tutor.name ?? 'Tutor'}
+              {tutor.name ?? tTutor('unknownTutor')}
             </Link>
             {tutor.university ? <p className="text-sm text-body">{tutor.university}</p> : null}
           </div>
           <p className="text-sm font-semibold text-primary">
-            {tutor.hourlyRate ? `₩${tutor.hourlyRate.toLocaleString()}/${locale === 'ko' ? '시간' : 'hr'}` : '-'}
+            {tutor.hourlyRate ? `${formatKrw(tutor.hourlyRate, locale)}/${tTutor('perHour')}` : '-'}
           </p>
         </div>
 
@@ -89,16 +91,21 @@ export function TutorCard({ tutor }: TutorCardProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <div className="border-t border-slate-100 pt-3">
           <p className="text-xs text-body">
             {locale === 'ko'
               ? TEACHING_MODE_LABELS[tutor.teachingMode].ko
               : TEACHING_MODE_LABELS[tutor.teachingMode].en}
           </p>
-          <Badge variant="verified" className="gap-1">
-            <BadgeCheck className="size-3" />
-            {tTutor('verified')} {tutor.verifiedCredentials.length}
-          </Badge>
+          {tutor.verifiedCredentials.length > 0 ? (
+            <div className="mt-2">
+              <BadgeList credentials={tutor.verifiedCredentials} maxVisible={3} />
+            </div>
+          ) : (
+            <Badge variant="outline" className="mt-2 h-auto min-h-8 rounded-full px-3 py-1 text-sm">
+              {tTutor('verified')} 0
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>

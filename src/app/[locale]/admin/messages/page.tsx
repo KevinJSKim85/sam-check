@@ -132,6 +132,7 @@ export default function AdminMessagesPage() {
               placeholder="사용자 이름으로 검색"
               value={searchKeyword}
               onChange={(event) => setSearchKeyword(event.target.value)}
+              className="h-11"
             />
           </CardHeader>
           <CardContent className="space-y-2">
@@ -144,12 +145,12 @@ export default function AdminMessagesPage() {
               const isSelected = thread.threadId === activeThreadId
 
               return (
-                <button
-                  key={thread.threadId}
-                  className={`w-full rounded-lg border p-3 text-left transition ${
-                    isSelected
-                      ? 'border-primary bg-primary-50'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+					<button
+						key={thread.threadId}
+						className={`w-full min-h-11 rounded-lg border p-3 text-left transition ${
+							isSelected
+								? 'border-primary bg-primary-50'
+								: 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                   type="button"
                   onClick={() => {

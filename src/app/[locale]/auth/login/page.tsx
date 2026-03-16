@@ -13,7 +13,7 @@ export default async function LoginPage({ params }: LoginPageProps) {
   const t = useTranslations('auth');
 
   return (
-    <div className="mx-auto flex w-full max-w-md items-center px-4 py-12 sm:px-6">
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-md items-center px-4 py-12 sm:px-6">
       <Card className="w-full border-primary/15 shadow-md">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl">{t('loginTitle')}</CardTitle>
