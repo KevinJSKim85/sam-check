@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { StarDisplay } from '@/components/features/reviews/star-display'
+import { useTranslations } from 'next-intl'
 
 type ReviewCardProps = {
   review: {
@@ -25,16 +26,18 @@ function getInitials(name: string | null) {
 }
 
 export function ReviewCard({ review, locale }: ReviewCardProps) {
+  const tReview = useTranslations('review')
+
   return (
     <Card key={review.id} className="border border-slate-200 bg-slate-50 py-0">
       <CardContent className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Avatar size="sm">
-              <AvatarImage src={review.authorImage ?? undefined} alt={review.authorName ?? 'Reviewer'} />
+              <AvatarImage src={review.authorImage ?? undefined} alt={review.authorName ?? tReview('anonymousReviewer')} />
               <AvatarFallback>{getInitials(review.authorName)}</AvatarFallback>
             </Avatar>
-            <p className="text-sm font-semibold text-slate-800">{review.authorName ?? 'Student'}</p>
+            <p className="text-sm font-semibold text-slate-800">{review.authorName ?? tReview('anonymousReviewer')}</p>
           </div>
           <div className="flex items-center gap-2">
             <StarDisplay rating={review.rating} sizeClassName="size-3.5" />

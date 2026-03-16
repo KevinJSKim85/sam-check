@@ -36,13 +36,13 @@ export function UserMenu({ user }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Avatar className="cursor-pointer ring-2 ring-white/20 hover:ring-white/40">
-          <AvatarImage src={user.image ?? undefined} alt={user.name ?? 'User avatar'} />
+          <Avatar className="cursor-pointer ring-2 ring-white/20 hover:ring-white/40">
+          <AvatarImage src={user.image ?? undefined} alt={user.name ?? tCommon('anonymous')} />
           <AvatarFallback className="bg-white/15 text-white">{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>{user.name ?? 'User'}</DropdownMenuLabel>
+        <DropdownMenuLabel>{user.name ?? tCommon('anonymous')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/my-page" />}>{tCommon('myPage')}</DropdownMenuItem>
         <DropdownMenuItem render={<Link href="/dashboard" />}>{tCommon('dashboard')}</DropdownMenuItem>

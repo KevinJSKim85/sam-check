@@ -14,6 +14,7 @@ type ReviewFormProps = {
 
 export function ReviewForm({ tutorProfileId }: ReviewFormProps) {
   const tReview = useTranslations('review')
+  const tErrors = useTranslations('errors')
   const router = useRouter()
 
   const [rating, setRating] = useState(5)
@@ -29,7 +30,7 @@ export function ReviewForm({ tutorProfileId }: ReviewFormProps) {
 
     const parsed = reviewSchema.safeParse({ rating, content })
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid review input')
+      setError(parsed.error.issues[0]?.message ?? tErrors('invalidReviewInput'))
       return
     }
 
@@ -47,15 +48,15 @@ export function ReviewForm({ tutorProfileId }: ReviewFormProps) {
       const data = (await response.json()) as { error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to submit review')
+        throw new Error(data.error ?? tErrors('failedSubmitReview'))
       }
 
       setContent('')
       setRating(5)
-      setSuccess('리뷰가 등록되었습니다.')
+      setSuccess(tReview('submitSuccess'))
       router.refresh()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Failed to submit review')
+      setError(submitError instanceof Error ? submitError.message : tErrors('failedSubmitReview'))
     } finally {
       setSaving(false)
     }

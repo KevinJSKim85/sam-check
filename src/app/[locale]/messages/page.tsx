@@ -1,9 +1,11 @@
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { requireAuth } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Link } from '@/i18n/routing'
+import { formatDateTime } from '@/lib/format'
 
 function getInitials(name: string | null) {
   if (!name) return 'U'
@@ -17,6 +19,7 @@ function getInitials(name: string | null) {
 
 export default async function MessagesPage() {
   const session = await requireAuth()
+  const locale = await getLocale()
   const tMessage = await getTranslations('message')
 
   const messages = await prisma.message.findMany({
@@ -89,9 +92,7 @@ export default async function MessagesPage() {
       </div>
 
       {threads.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-body">
-          {tMessage('noMessages')}
-        </div>
+        <EmptyState message={tMessage('noMessages')} />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {threads.map((thread) => (
@@ -102,17 +103,17 @@ export default async function MessagesPage() {
             >
               <div className="flex items-start gap-3">
                 <Avatar size="lg" className="size-11">
-                  <AvatarImage src={thread.partnerImage ?? undefined} alt={thread.partnerName ?? 'User'} />
+                  <AvatarImage src={thread.partnerImage ?? undefined} alt={thread.partnerName ?? tMessage('unknownUser')} />
                   <AvatarFallback>{getInitials(thread.partnerName)}</AvatarFallback>
                 </Avatar>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <p className="truncate font-semibold text-slate-900">
-                      {thread.partnerName ?? 'User'}
+                      {thread.partnerName ?? tMessage('unknownUser')}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {thread.lastMessageAt.toLocaleString()}
+                      {formatDateTime(thread.lastMessageAt, locale)}
                     </p>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-3">

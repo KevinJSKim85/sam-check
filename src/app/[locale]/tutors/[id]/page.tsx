@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Link } from '@/i18n/routing'
 import { CREDENTIAL_TYPE_LABELS, CURRICULA, SUBJECTS, TEACHING_MODE_LABELS } from '@/lib/constants'
 import { prisma } from '@/lib/db'
@@ -208,9 +209,7 @@ export default async function TutorDetailPage({
           ) : null}
 
           {tutor.reviews.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-body">
-              {tTutor('noReviews')}
-            </div>
+            <EmptyState message={tTutor('noReviews')} />
           ) : (
             <div className="space-y-3">
               {tutor.reviews.map((review) => (

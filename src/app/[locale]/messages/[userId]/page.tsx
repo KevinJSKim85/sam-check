@@ -5,6 +5,9 @@ import { useParams } from 'next/navigation'
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorFallback } from '@/components/ui/error-fallback'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Link } from '@/i18n/routing'
 
@@ -41,6 +44,7 @@ export default function ConversationPage() {
   const userId = useMemo(() => String(params.userId), [params.userId])
   const locale = useLocale()
   const tMessage = useTranslations('message')
+  const tErrors = useTranslations('errors')
 
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -55,17 +59,17 @@ export default function ConversationPage() {
       const data = (await response.json()) as ConversationResponse & { error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to load conversation')
+        throw new Error(data.error ?? tErrors('failedLoadConversation'))
       }
 
       setConversation(data)
       setError('')
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Failed to load conversation')
+      setError(loadError instanceof Error ? loadError.message : tErrors('failedLoadConversation'))
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [tErrors, userId])
 
   useEffect(() => {
     void loadConversation()
@@ -99,24 +103,32 @@ export default function ConversationPage() {
 
       const data = (await response.json()) as { error?: string }
       if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to send message')
+        throw new Error(data.error ?? tErrors('failedSendMessage'))
       }
 
       setMessage('')
       await loadConversation()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Failed to send message')
+      setError(submitError instanceof Error ? submitError.message : tErrors('failedSendMessage'))
     } finally {
       setSending(false)
     }
   }
 
   if (loading) {
-    return <div className="mx-auto w-full max-w-4xl px-4 py-8 text-sm text-body sm:px-6 lg:px-8">Loading...</div>
+    return (
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <LoadingSkeleton variant="list" count={4} />
+      </div>
+    )
   }
 
   if (!conversation) {
-    return <div className="mx-auto w-full max-w-4xl px-4 py-8 text-sm text-rose-600 sm:px-6 lg:px-8">{error}</div>
+    return (
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <ErrorFallback message={error || tErrors('failedLoadConversation')} onRetry={() => void loadConversation()} />
+      </div>
+    )
   }
 
   const partnerProfileHref = conversation.partner.tutorProfileId
@@ -127,14 +139,14 @@ export default function ConversationPage() {
     <div className="mx-auto flex h-[calc(100vh-10rem)] min-h-[32rem] w-full max-w-4xl flex-col px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between rounded-t-2xl border border-slate-200 bg-white px-4 py-3">
         <div className="flex items-center gap-3">
-          <Avatar className="size-10" size="lg">
-            <AvatarImage src={conversation.partner.image ?? undefined} alt={conversation.partner.name ?? 'User'} />
+            <Avatar className="size-10" size="lg">
+            <AvatarImage src={conversation.partner.image ?? undefined} alt={conversation.partner.name ?? tMessage('unknownUser')} />
             <AvatarFallback>{getInitials(conversation.partner.name)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-slate-900">{conversation.partner.name ?? 'User'}</p>
+            <p className="font-semibold text-slate-900">{conversation.partner.name ?? tMessage('unknownUser')}</p>
             <Link href={partnerProfileHref} className="text-xs text-primary hover:underline">
-              View profile
+              {tMessage('viewProfile')}
             </Link>
           </div>
         </div>
@@ -145,8 +157,8 @@ export default function ConversationPage() {
         className="flex-1 space-y-3 overflow-y-auto border-x border-slate-200 bg-white px-4 py-4"
       >
         {conversation.messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-300 text-sm text-body">
-            {tMessage('messagePlaceholder')}
+          <div className="pt-10">
+            <EmptyState message={tMessage('emptyConversation')} />
           </div>
         ) : (
           conversation.messages.map((item) => {
@@ -180,7 +192,7 @@ export default function ConversationPage() {
             maxLength={2000}
           />
           <Button type="submit" className="min-h-11" disabled={sending || message.trim().length === 0}>
-            {sending ? '...' : tMessage('send')}
+            {sending ? tMessage('sendPending') : tMessage('send')}
           </Button>
         </div>
         {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}

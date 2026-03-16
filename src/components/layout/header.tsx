@@ -28,7 +28,7 @@ export function Header() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-xl font-bold tracking-tight">
-            쌤체크
+            {tCommon('title')}
           </Link>
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
             <Link href="/" className="text-white/90 transition hover:text-white">

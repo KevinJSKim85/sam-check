@@ -27,7 +27,7 @@ export function MobileNav({ isAuthenticated }: MobileNavProps) {
     <Sheet>
       <SheetTrigger render={<Button variant="ghost" size="icon" className="text-white hover:bg-white/10" />}>
         <Menu />
-        <span className="sr-only">Open navigation</span>
+        <span className="sr-only">{tCommon('openNavigation')}</span>
       </SheetTrigger>
       <SheetContent side="right" className="bg-primary-900 text-white">
         <SheetHeader>

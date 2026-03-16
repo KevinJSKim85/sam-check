@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { requireAuth } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
@@ -30,6 +31,7 @@ function getCompleteness(profile: {
 
 export default async function DashboardPage() {
   const session = await requireAuth()
+  const tDashboard = await getTranslations('dashboard')
 
   const [profile, unreadMessages, recentReviews] = await Promise.all([
     prisma.tutorProfile.findUnique({
@@ -62,56 +64,56 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
       <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary-50 via-white to-accent-50 p-6">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">튜터 대시보드</h1>
-        <p className="mt-2 text-sm text-body">프로필 완성도와 인증 상태를 관리하고 최근 활동을 확인하세요.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{tDashboard('title')}</h1>
+        <p className="mt-2 text-sm text-body">{tDashboard('subtitle')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button render={<Link href="/dashboard/profile" />} variant="cta">프로필 수정</Button>
-          <Button render={<Link href="/dashboard/credentials" />} variant="outline">인증 관리</Button>
+          <Button render={<Link href="/dashboard/profile" />} variant="cta">{tDashboard('editProfile')}</Button>
+          <Button render={<Link href="/dashboard/credentials" />} variant="outline">{tDashboard('manageCredentials')}</Button>
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle>프로필 완성도</CardTitle>
+            <CardTitle>{tDashboard('profileCompleteness')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-primary">{profileCompleteness}%</p>
-            <p className="mt-2 text-sm text-body">핵심 정보 7개 기준으로 계산됩니다.</p>
+            <p className="mt-2 text-sm text-body">{tDashboard('profileCompletenessHint')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>인증 현황</CardTitle>
+            <CardTitle>{tDashboard('credentialOverview')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm text-body">총 {profile?.credentials.length ?? 0}건 제출</p>
+            <p className="text-sm text-body">{tDashboard('submittedCount', { count: profile?.credentials.length ?? 0 })}</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <Badge className="bg-emerald-100 text-emerald-800">인증 {approvedCount}</Badge>
-              <Badge className="bg-amber-100 text-amber-800">검토 {pendingCount}</Badge>
-              <Badge className="bg-rose-100 text-rose-800">반려 {rejectedCount}</Badge>
+              <Badge className="bg-emerald-100 text-emerald-800">{tDashboard('approved')} {approvedCount}</Badge>
+              <Badge className="bg-amber-100 text-amber-800">{tDashboard('pending')} {pendingCount}</Badge>
+              <Badge className="bg-rose-100 text-rose-800">{tDashboard('rejected')} {rejectedCount}</Badge>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>읽지 않은 쪽지</CardTitle>
+            <CardTitle>{tDashboard('unreadMessages')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-slate-900">{unreadMessages}</p>
-            <p className="mt-2 text-sm text-body">학생 문의를 확인해보세요.</p>
+            <p className="mt-2 text-sm text-body">{tDashboard('unreadMessagesHint')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>최근 리뷰</CardTitle>
+            <CardTitle>{tDashboard('recentReviews')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-slate-900">{recentReviews.length}</p>
-            <p className="mt-2 text-sm text-body">최근 작성된 리뷰 5건 기준</p>
+            <p className="mt-2 text-sm text-body">{tDashboard('recentReviewsHint')}</p>
           </CardContent>
         </Card>
       </section>
@@ -119,17 +121,17 @@ export default async function DashboardPage() {
       <section className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>빠른 이동</CardTitle>
+            <CardTitle>{tDashboard('quickLinks')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="font-semibold text-slate-900">프로필 정보 수정</p>
-              <p className="mt-1 text-body">학력, 과목, 시급, 공개 여부를 업데이트합니다.</p>
+              <p className="font-semibold text-slate-900">{tDashboard('quickProfileTitle')}</p>
+              <p className="mt-1 text-body">{tDashboard('quickProfileDesc')}</p>
               <Link className="mt-2 inline-block text-primary hover:underline" href="/dashboard/profile">/dashboard/profile</Link>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="font-semibold text-slate-900">인증 서류 제출/관리</p>
-              <p className="mt-1 text-body">인증 상태 확인, 반려 건 재제출, 삭제를 진행합니다.</p>
+              <p className="font-semibold text-slate-900">{tDashboard('quickCredentialTitle')}</p>
+              <p className="mt-1 text-body">{tDashboard('quickCredentialDesc')}</p>
               <Link className="mt-2 inline-block text-primary hover:underline" href="/dashboard/credentials">/dashboard/credentials</Link>
             </div>
           </CardContent>
@@ -137,15 +139,15 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>최근 리뷰 목록</CardTitle>
+            <CardTitle>{tDashboard('recentReviewList')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {recentReviews.length === 0 ? (
-              <p className="text-sm text-body">아직 리뷰가 없습니다.</p>
+              <p className="text-sm text-body">{tDashboard('noRecentReviews')}</p>
             ) : (
               recentReviews.map((review) => (
                 <div key={review.id} className="rounded-lg border border-slate-200 p-3">
-                  <p className="text-sm font-medium text-slate-900">{review.author.name ?? '익명 학생'} · {review.rating}/5</p>
+                  <p className="text-sm font-medium text-slate-900">{review.author.name ?? tDashboard('anonymousStudent')} · {review.rating}/5</p>
                   <p className="mt-1 line-clamp-2 text-sm text-body">{review.content}</p>
                 </div>
               ))

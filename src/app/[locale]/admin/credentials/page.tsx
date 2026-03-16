@@ -1,12 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorFallback } from '@/components/ui/error-fallback'
 import { Input } from '@/components/ui/input'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { CREDENTIAL_TYPE_LABELS } from '@/lib/constants'
+import { formatDateTime } from '@/lib/format'
 
 type QueueStatus = 'PENDING' | 'UNDER_REVIEW'
 type ReviewStatus = 'APPROVED' | 'REJECTED'
@@ -43,15 +48,20 @@ type QueueResponse = {
 
 type DraftById = Record<string, { verificationNote: string; rejectionReason: string }>
 
-function renderStatusBadge(status: QueueStatus) {
+function renderStatusBadge(status: QueueStatus, labels: { underReview: string; pending: string }) {
   if (status === 'UNDER_REVIEW') {
-    return <Badge className="bg-blue-100 text-blue-800">심사 중</Badge>
+    return <Badge className="bg-blue-100 text-blue-800">{labels.underReview}</Badge>
   }
 
-  return <Badge className="bg-amber-100 text-amber-800">대기 중</Badge>
+  return <Badge className="bg-amber-100 text-amber-800">{labels.pending}</Badge>
 }
 
 export default function AdminCredentialQueuePage() {
+  const locale = useLocale()
+  const tAdmin = useTranslations('admin')
+  const tErrors = useTranslations('errors')
+  const isKo = locale === 'ko'
+
   const [credentials, setCredentials] = useState<QueueCredential[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -81,18 +91,18 @@ export default function AdminCredentialQueuePage() {
       const data = (await response.json()) as QueueResponse & { error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error ?? '인증 큐를 불러오지 못했습니다.')
+        throw new Error(data.error ?? tErrors('failedLoadQueue'))
       }
 
       setCredentials(data.credentials)
       setPendingCount(data.pendingCount)
       initializeDraft(data.credentials)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : '오류가 발생했습니다.')
+      setError(loadError instanceof Error ? loadError.message : tErrors('failedLoadQueue'))
     } finally {
       setLoading(false)
     }
-  }, [initializeDraft])
+  }, [initializeDraft, tErrors])
 
   useEffect(() => {
     void loadQueue()
@@ -121,12 +131,12 @@ export default function AdminCredentialQueuePage() {
     const draft = draftById[credentialId] ?? { verificationNote: '', rejectionReason: '' }
 
     if (status === 'APPROVED' && draft.verificationNote.trim().length === 0) {
-      setError('승인 시 검토 메모를 입력해주세요.')
+      setError(tErrors('approveNoteRequired'))
       return
     }
 
     if (status === 'REJECTED' && draft.rejectionReason.trim().length === 0) {
-      setError('반려 사유를 입력해주세요.')
+      setError(tErrors('rejectReasonRequired'))
       return
     }
 
@@ -149,13 +159,13 @@ export default function AdminCredentialQueuePage() {
 
       const data = (await response.json()) as { error?: string }
       if (!response.ok) {
-        throw new Error(data.error ?? '상태 업데이트에 실패했습니다.')
+        throw new Error(data.error ?? tErrors('failedUpdateStatus'))
       }
 
-      setMessage(status === 'APPROVED' ? '인증을 승인했습니다.' : '인증을 반려했습니다.')
+      setMessage(status === 'APPROVED' ? tAdmin('approveSuccess') : tAdmin('rejectSuccess'))
       await loadQueue()
     } catch (reviewError) {
-      setError(reviewError instanceof Error ? reviewError.message : '오류가 발생했습니다.')
+      setError(reviewError instanceof Error ? reviewError.message : tErrors('failedUpdateStatus'))
     } finally {
       setSubmittingId(null)
     }
@@ -165,19 +175,22 @@ export default function AdminCredentialQueuePage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-10 sm:px-6 lg:px-8">
       <Card className="border-primary/20">
         <CardHeader>
-          <CardTitle className="text-2xl text-slate-900">자격 인증 검토 큐</CardTitle>
-          <p className="text-sm text-body">대기/심사 중 인증을 오래된 순으로 확인하고 승인 또는 반려할 수 있습니다.</p>
+          <CardTitle className="text-2xl text-slate-900">{tAdmin('queueTitle')}</CardTitle>
+          <p className="text-sm text-body">{tAdmin('queueSubtitle')}</p>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <p className="font-medium text-slate-900">총 대기 건수: {pendingCount}</p>
+          <p className="font-medium text-slate-900">{tAdmin('totalPending', { count: pendingCount })}</p>
           <p className="text-body">
-            {oldestDate ? `최오래된 제출: ${new Date(oldestDate).toLocaleString('ko-KR')}` : '현재 대기 건이 없습니다.'}
+            {oldestDate
+              ? tAdmin('oldestSubmitted', { datetime: formatDateTime(oldestDate, locale) })
+              : tAdmin('noPending')}
           </p>
         </CardContent>
       </Card>
 
-      {loading ? <p className="text-sm text-body">불러오는 중...</p> : null}
-      {!loading && credentials.length === 0 ? <p className="text-sm text-body">검토할 인증이 없습니다.</p> : null}
+      {loading ? <LoadingSkeleton variant="list" count={3} /> : null}
+      {!loading && error ? <ErrorFallback message={error} onRetry={() => void loadQueue()} /> : null}
+      {!loading && !error && credentials.length === 0 ? <EmptyState message={tAdmin('noPending')} /> : null}
 
       <div className="space-y-4">
         {credentials.map((credential) => {
@@ -192,19 +205,22 @@ export default function AdminCredentialQueuePage() {
                       <div>
                         <p className="font-semibold text-slate-900">{credential.label}</p>
                         <p className="mt-1 text-sm text-body">
-                          {credential.tutor.name ?? '이름 없음'} · {CREDENTIAL_TYPE_LABELS[credential.type].ko}
+                           {credential.tutor.name ?? tAdmin('noName')} · {CREDENTIAL_TYPE_LABELS[credential.type][isKo ? 'ko' : 'en']}
                         </p>
                         <p className="mt-1 text-sm text-body">
-                          점수: {credential.scoreValue ?? '-'} · 제출일: {new Date(credential.submittedAt).toLocaleString('ko-KR')}
+                          {tAdmin('scoreAndDate', { score: credential.scoreValue ?? '-', datetime: formatDateTime(credential.submittedAt, locale) })}
                         </p>
                       </div>
-                      {renderStatusBadge(credential.status)}
+                      {renderStatusBadge(credential.status, {
+                        underReview: tAdmin('underReview'),
+                        pending: tAdmin('pending'),
+                      })}
                     </div>
                   </summary>
 
                   <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
                     <div className="rounded-lg border border-slate-200 p-4">
-                      <p className="text-sm font-semibold text-slate-900">서류 미리보기</p>
+                      <p className="text-sm font-semibold text-slate-900">{tAdmin('documentPreview')}</p>
                       {credential.documentSignedUrl ? (
                         <a
                           className="mt-2 inline-block text-sm text-primary hover:underline"
@@ -212,21 +228,21 @@ export default function AdminCredentialQueuePage() {
                           rel="noopener noreferrer"
                           target="_blank"
                         >
-                          {credential.documentName ?? '서류 보기'}
+                          {credential.documentName ?? tAdmin('viewDocument')}
                         </a>
                       ) : (
-                        <p className="mt-2 text-sm text-body">첨부된 서류가 없습니다.</p>
+                        <p className="mt-2 text-sm text-body">{tAdmin('noDocument')}</p>
                       )}
                     </div>
 
                     <div className="rounded-lg border border-slate-200 p-4">
-                      <p className="text-sm font-semibold text-slate-900">튜터 프로필 요약</p>
-                      <p className="mt-2 text-sm text-body">이메일: {credential.tutor.email ?? '-'}</p>
-                      <p className="mt-1 text-sm text-body">헤드라인: {credential.tutor.profile.headline ?? '-'}</p>
-                      <p className="mt-1 text-sm text-body">학력: {credential.tutor.profile.university ?? '-'} {credential.tutor.profile.degree ?? ''}</p>
-                      <p className="mt-1 text-sm text-body">과목: {credential.tutor.profile.subjects.join(', ') || '-'}</p>
-                      <p className="mt-1 text-sm text-body">커리큘럼: {credential.tutor.profile.curricula.join(', ') || '-'}</p>
-                      <p className="mt-1 text-sm text-body">소개: {credential.tutor.profile.bio ?? credential.description ?? '-'}</p>
+                      <p className="text-sm font-semibold text-slate-900">{tAdmin('tutorProfileSummary')}</p>
+                      <p className="mt-2 text-sm text-body">{tAdmin('email')}: {credential.tutor.email ?? '-'}</p>
+                      <p className="mt-1 text-sm text-body">{tAdmin('headline')}: {credential.tutor.profile.headline ?? '-'}</p>
+                      <p className="mt-1 text-sm text-body">{tAdmin('education')}: {credential.tutor.profile.university ?? '-'} {credential.tutor.profile.degree ?? ''}</p>
+                      <p className="mt-1 text-sm text-body">{tAdmin('subjects')}: {credential.tutor.profile.subjects.join(', ') || '-'}</p>
+                      <p className="mt-1 text-sm text-body">{tAdmin('curricula')}: {credential.tutor.profile.curricula.join(', ') || '-'}</p>
+                      <p className="mt-1 text-sm text-body">{tAdmin('intro')}: {credential.tutor.profile.bio ?? credential.description ?? '-'}</p>
                     </div>
 
                     <form
@@ -238,11 +254,11 @@ export default function AdminCredentialQueuePage() {
                     >
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-slate-900" htmlFor={`verification-note-${credential.id}`}>
-                          승인 메모
+                          {tAdmin('approveNote')}
                         </label>
                         <Input
                           id={`verification-note-${credential.id}`}
-                          placeholder="예: CollegeBoard Score Report로 인증됨"
+                          placeholder={tAdmin('approveNotePlaceholder')}
                           value={draft.verificationNote}
                           onChange={(event) => updateDraft(credential.id, 'verificationNote', event.target.value)}
                         />
@@ -250,11 +266,11 @@ export default function AdminCredentialQueuePage() {
 
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-slate-900" htmlFor={`rejection-reason-${credential.id}`}>
-                          반려 사유
+                          {tAdmin('rejectReason')}
                         </label>
                         <Textarea
                           id={`rejection-reason-${credential.id}`}
-                          placeholder="반려 시 필수 입력"
+                          placeholder={tAdmin('rejectReasonPlaceholder')}
                           rows={3}
                           value={draft.rejectionReason}
                           onChange={(event) => updateDraft(credential.id, 'rejectionReason', event.target.value)}
@@ -263,7 +279,7 @@ export default function AdminCredentialQueuePage() {
 
                       <div className="flex flex-wrap gap-2">
                         <Button type="submit" variant="cta" disabled={submittingId === credential.id}>
-                          승인
+                          {tAdmin('approve')}
                         </Button>
                         <Button
                           type="button"
@@ -273,7 +289,7 @@ export default function AdminCredentialQueuePage() {
                             void handleReview(credential.id, 'REJECTED')
                           }}
                         >
-                          반려
+                          {tAdmin('reject')}
                         </Button>
                       </div>
                     </form>
@@ -286,7 +302,6 @@ export default function AdminCredentialQueuePage() {
       </div>
 
       {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>
   )
 }

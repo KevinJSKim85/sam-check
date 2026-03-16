@@ -5,8 +5,10 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { CURRICULA, SUBJECTS } from '@/lib/constants'
+import { formatKrw } from '@/lib/format'
 import { tutorProfileSchema } from '@/schemas'
 
 type UniversityEntry = {
@@ -66,7 +68,10 @@ function createUniversityEntry(isPrimary = false): UniversityEntry {
 }
 
 export default function TutorProfilePage() {
+  const tCommon = useTranslations('common')
   const tTutor = useTranslations('tutor')
+  const tDashboard = useTranslations('dashboard')
+  const tErrors = useTranslations('errors')
   const locale = useLocale()
 
   const [loading, setLoading] = useState(true)
@@ -94,7 +99,7 @@ export default function TutorProfilePage() {
       try {
         const response = await fetch('/api/tutors/me')
         if (!response.ok) {
-          throw new Error('프로필을 불러오지 못했습니다.')
+          throw new Error(tErrors('failedLoadProfile'))
         }
 
         const data = (await response.json()) as ProfileResponse
@@ -140,7 +145,7 @@ export default function TutorProfilePage() {
         }
       } catch (loadError) {
         if (mounted) {
-          setError(loadError instanceof Error ? loadError.message : '오류가 발생했습니다.')
+          setError(loadError instanceof Error ? loadError.message : tErrors('failedLoadProfile'))
         }
       } finally {
         if (mounted) {
@@ -154,7 +159,7 @@ export default function TutorProfilePage() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [tErrors])
 
   const parsedHourlyRate = useMemo(() => {
     const value = Number(hourlyRate)
@@ -231,7 +236,7 @@ export default function TutorProfilePage() {
 
     const validationResult = tutorProfileSchema.safeParse(payload)
     if (!validationResult.success) {
-      setError(validationResult.error.issues[0]?.message ?? '입력값을 확인해주세요.')
+      setError(validationResult.error.issues[0]?.message ?? tErrors('checkInput'))
       setSaving(false)
       return
     }
@@ -246,76 +251,80 @@ export default function TutorProfilePage() {
       const data = (await response.json()) as { error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error ?? '저장에 실패했습니다.')
+        throw new Error(data.error ?? tErrors('failedSave'))
       }
 
-      setSuccess('프로필이 저장되었습니다.')
+      setSuccess(tDashboard('saveSuccess'))
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : '오류가 발생했습니다.')
+      setError(submitError instanceof Error ? submitError.message : tErrors('failedSave'))
     } finally {
       setSaving(false)
     }
   }
 
   if (loading) {
-    return <div className="mx-auto w-full max-w-4xl px-4 py-10 text-sm text-body sm:px-6">불러오는 중...</div>
+    return (
+      <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
+        <LoadingSkeleton variant="profile" />
+      </div>
+    )
   }
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
       <Card className="border-primary/20 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">튜터 프로필 수정</CardTitle>
-          <p className="text-sm text-body">공개 프로필과 노출 정보는 여기에서 관리할 수 있습니다.</p>
+          <CardTitle className="text-2xl">{tDashboard('profilePageTitle')}</CardTitle>
+          <p className="text-sm text-body">{tDashboard('profilePageSubtitle')}</p>
         </CardHeader>
         <CardContent>
           <form className="space-y-8" onSubmit={onSubmit}>
             <section className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="first-name">English First Name *</label>
+                <label className="font-medium text-slate-900" htmlFor="first-name">{tDashboard('firstName')} *</label>
                 <Input id="first-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} required />
               </div>
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="last-name">English Last Name *</label>
+                <label className="font-medium text-slate-900" htmlFor="last-name">{tDashboard('lastName')} *</label>
                 <Input id="last-name" value={lastName} onChange={(event) => setLastName(event.target.value)} required />
               </div>
             </section>
 
             <section className="space-y-4">
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="headline">한줄 소개</label>
+                <label className="font-medium text-slate-900" htmlFor="headline">{tDashboard('headline')}</label>
                 <Input
                   id="headline"
                   value={headline}
                   onChange={(event) => setHeadline(event.target.value)}
                   maxLength={100}
-                  placeholder="튜터 강점을 한 문장으로 작성해주세요"
+                  placeholder={tDashboard('headlinePlaceholder')}
                 />
                 <span className="text-xs text-muted-foreground">{headline.length}/100</span>
               </div>
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="bio">자기소개</label>
+                <label className="font-medium text-slate-900" htmlFor="bio">{tDashboard('bio')}</label>
                 <Textarea
                   id="bio"
                   value={bio}
                   onChange={(event) => setBio(event.target.value)}
                   maxLength={2000}
                   rows={8}
-                  placeholder="수업 방식, 강점, 학생과의 소통 스타일 등을 작성해주세요"
+                  placeholder={tDashboard('bioPlaceholder')}
                 />
                 <span className="text-xs text-muted-foreground">{bio.length}/2000</span>
               </div>
             </section>
 
             <section className="space-y-4 rounded-xl border border-slate-200 p-4">
-              <h2 className="text-base font-semibold text-slate-900">학력</h2>
+              <h2 className="text-base font-semibold text-slate-900">{tDashboard('education')}</h2>
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="high-school">출신 고등학교</label>
+                <label className="font-medium text-slate-900" htmlFor="high-school">{tDashboard('highSchool')}</label>
                 <Input
                   id="high-school"
                   value={highSchool}
                   onChange={(event) => setHighSchool(event.target.value)}
-                  placeholder="예: Seoul International School"
+                  placeholder={tDashboard('highSchoolPlaceholder')}
                 />
               </div>
 
@@ -329,7 +338,7 @@ export default function TutorProfilePage() {
                         checked={entry.status === 'ENROLLED'}
                         onChange={() => updateUniversity(index, 'status', 'ENROLLED')}
                       />
-                      재학중
+                      {tDashboard('enrolled')}
                     </label>
                     <label className="inline-flex items-center gap-2">
                       <input
@@ -338,13 +347,13 @@ export default function TutorProfilePage() {
                         checked={entry.status === 'GRADUATED'}
                         onChange={() => updateUniversity(index, 'status', 'GRADUATED')}
                       />
-                      졸업
+                      {tDashboard('graduated')}
                     </label>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1 text-sm">
-                      <label className="font-medium text-slate-900" htmlFor={`enrollment-year-${entry.id}`}>입학 연도</label>
+                      <label className="font-medium text-slate-900" htmlFor={`enrollment-year-${entry.id}`}>{tDashboard('enrollmentYear')}</label>
                       <Input
                         id={`enrollment-year-${entry.id}`}
                         type="number"
@@ -353,7 +362,7 @@ export default function TutorProfilePage() {
                       />
                     </div>
                     <div className="space-y-1 text-sm">
-                      <label className="font-medium text-slate-900" htmlFor={`school-name-${entry.id}`}>학교명</label>
+                      <label className="font-medium text-slate-900" htmlFor={`school-name-${entry.id}`}>{tDashboard('schoolName')}</label>
                       <Input
                         id={`school-name-${entry.id}`}
                         value={entry.schoolName}
@@ -361,7 +370,7 @@ export default function TutorProfilePage() {
                       />
                     </div>
                     <div className="space-y-1 text-sm sm:col-span-2">
-                      <label className="font-medium text-slate-900" htmlFor={`major-${entry.id}`}>전공</label>
+                      <label className="font-medium text-slate-900" htmlFor={`major-${entry.id}`}>{tDashboard('major')}</label>
                       <Input
                         id={`major-${entry.id}`}
                         value={entry.major}
@@ -376,26 +385,26 @@ export default function TutorProfilePage() {
                       checked={entry.isPrimary}
                       onChange={() => setPrimaryUniversity(index)}
                     />
-                    이 학력을 프로필 대표 학력으로 설정
+                    {tDashboard('setPrimaryEducation')}
                   </label>
                 </div>
               ))}
 
               <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={addUniversity} disabled={universities.length >= 3}>
-                + 대학(원) 추가
+                {tDashboard('addUniversity')}
               </Button>
             </section>
 
             <section className="space-y-4">
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="activities">경력 및 기타활동</label>
+                <label className="font-medium text-slate-900" htmlFor="activities">{tDashboard('activities')}</label>
                 <Textarea
                   id="activities"
                   value={activities}
                   onChange={(event) => setActivities(event.target.value)}
                   rows={5}
                   maxLength={2000}
-                  placeholder="강의 경력, 수상 내역, 동아리/프로젝트 활동 등을 입력해주세요"
+                  placeholder={tDashboard('activitiesPlaceholder')}
                 />
               </div>
             </section>
@@ -436,7 +445,7 @@ export default function TutorProfilePage() {
 
             <section className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1 text-sm">
-                <label className="font-medium text-slate-900" htmlFor="hourly-rate">시급 (KRW)</label>
+                <label className="font-medium text-slate-900" htmlFor="hourly-rate">{tDashboard('hourlyRateKrw')}</label>
                 <Input
                   id="hourly-rate"
                   type="number"
@@ -446,12 +455,12 @@ export default function TutorProfilePage() {
                   onChange={(event) => setHourlyRate(event.target.value)}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {parsedHourlyRate > 0 ? `${parsedHourlyRate.toLocaleString('ko-KR')}원` : '0원'}
+                  {parsedHourlyRate > 0 ? formatKrw(parsedHourlyRate, locale) : formatKrw(0, locale)}
                 </span>
               </div>
 
               <div className="space-y-1 text-sm">
-                <p className="font-medium text-slate-900">수업 방식</p>
+                <p className="font-medium text-slate-900">{tDashboard('teachingMode')}</p>
                 <div className="space-y-2 rounded-lg border border-slate-200 p-3">
                   <label className="flex items-center gap-2">
                     <input
@@ -460,7 +469,7 @@ export default function TutorProfilePage() {
                       checked={teachingMode === 'ONLINE'}
                       onChange={() => setTeachingMode('ONLINE')}
                     />
-                    온라인
+                    {tTutor('online')}
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -469,7 +478,7 @@ export default function TutorProfilePage() {
                       checked={teachingMode === 'OFFLINE'}
                       onChange={() => setTeachingMode('OFFLINE')}
                     />
-                    대면
+                    {tTutor('offline')}
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -478,7 +487,7 @@ export default function TutorProfilePage() {
                       checked={teachingMode === 'BOTH'}
                       onChange={() => setTeachingMode('BOTH')}
                     />
-                    온라인/대면
+                    {tTutor('both')}
                   </label>
                 </div>
               </div>
@@ -491,7 +500,7 @@ export default function TutorProfilePage() {
                   checked={isPublished}
                   onChange={(event) => setIsPublished(event.target.checked)}
                 />
-                프로필 공개
+                {tDashboard('publishProfile')}
               </label>
             </section>
 
@@ -499,7 +508,7 @@ export default function TutorProfilePage() {
             {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
 
             <Button type="submit" variant="cta" className="min-h-11 w-full sm:w-auto" disabled={saving}>
-              {saving ? '저장 중...' : '저장'}
+              {saving ? tDashboard('saving') : tCommon('save')}
             </Button>
           </form>
         </CardContent>

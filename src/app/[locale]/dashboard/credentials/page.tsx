@@ -1,10 +1,13 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorFallback } from '@/components/ui/error-fallback'
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 import {
   Dialog,
   DialogContent,
@@ -48,16 +51,16 @@ const CREDENTIAL_TYPES: CredentialType[] = [
   'EXPERIENCE',
 ]
 
-function statusBadge(status: CredentialStatus) {
+function statusBadge(status: CredentialStatus, labels: { approved: string; rejected: string; pending: string }) {
   if (status === 'APPROVED') {
-    return <Badge className="bg-emerald-100 text-emerald-800">인증됨</Badge>
+    return <Badge className="bg-emerald-100 text-emerald-800">{labels.approved}</Badge>
   }
 
   if (status === 'REJECTED') {
-    return <Badge className="bg-rose-100 text-rose-800">반려됨</Badge>
+    return <Badge className="bg-rose-100 text-rose-800">{labels.rejected}</Badge>
   }
 
-  return <Badge className="bg-amber-100 text-amber-800">검토 중</Badge>
+  return <Badge className="bg-amber-100 text-amber-800">{labels.pending}</Badge>
 }
 
 function buildPayload(params: {
@@ -133,7 +136,11 @@ function buildPayload(params: {
 }
 
 export default function CredentialsDashboardPage() {
+  const locale = useLocale()
   const tCredential = useTranslations('credential')
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  const isKo = locale === 'ko'
 
   const [credentials, setCredentials] = useState<CredentialItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -167,17 +174,17 @@ export default function CredentialsDashboardPage() {
     try {
       const response = await fetch('/api/credentials/me')
       if (!response.ok) {
-        throw new Error('인증 목록을 불러오지 못했습니다.')
+        throw new Error(tErrors('failedLoadCredentials'))
       }
 
       const data = (await response.json()) as CredentialResponse
       setCredentials(data.credentials)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : '오류가 발생했습니다.')
+      setError(loadError instanceof Error ? loadError.message : tErrors('failedLoadCredentials'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tErrors])
 
   useEffect(() => {
     void loadCredentials()
@@ -190,7 +197,7 @@ export default function CredentialsDashboardPage() {
     setIbSubject('')
     setLanguageTestName('TOEFL')
     setSchoolName('')
-    setSchoolCertType('재학')
+      setSchoolCertType('재학')
     setExperienceDescription('')
     setPeriodStart('')
     setPeriodEnd('')
@@ -223,13 +230,13 @@ export default function CredentialsDashboardPage() {
       const data = (await response.json()) as { error?: string }
 
       if (!response.ok) {
-        throw new Error(data.error ?? '삭제에 실패했습니다.')
+        throw new Error(data.error ?? tErrors('failedDeleteCredential'))
       }
 
-      setMessage('인증 항목을 삭제했습니다.')
+      setMessage(tCredential('deleted'))
       await loadCredentials()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : '오류가 발생했습니다.')
+      setError(deleteError instanceof Error ? deleteError.message : tErrors('failedDeleteCredential'))
     }
   }
 
@@ -237,17 +244,17 @@ export default function CredentialsDashboardPage() {
     event.preventDefault()
 
     if (isApprovedTarget) {
-      setError('인증된 항목은 수정할 수 없습니다.')
+      setError(tErrors('approvedCannotEdit'))
       return
     }
 
     if (!documentFile && type !== 'EXPERIENCE') {
-      setError('증빙 파일을 업로드해주세요.')
+      setError(tErrors('uploadProofFile'))
       return
     }
 
     if (!documentFile && resubmitId) {
-      setError('재제출 시 파일을 다시 업로드해주세요.')
+      setError(tErrors('resubmitRequiresFile'))
       return
     }
 
@@ -289,15 +296,15 @@ export default function CredentialsDashboardPage() {
 
       const data = (await response.json()) as { error?: string }
       if (!response.ok) {
-        throw new Error(data.error ?? '저장에 실패했습니다.')
+        throw new Error(data.error ?? tErrors('failedSave'))
       }
 
       setDialogOpen(false)
       resetForm()
-      setMessage(resubmitId ? '재제출이 완료되었습니다.' : '인증을 제출했습니다.')
+      setMessage(resubmitId ? tCredential('resubmitted') : tCredential('submitted'))
       await loadCredentials()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : '오류가 발생했습니다.')
+      setError(submitError instanceof Error ? submitError.message : tErrors('failedSave'))
     } finally {
       setSaving(false)
     }
@@ -309,7 +316,7 @@ export default function CredentialsDashboardPage() {
         <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <CardTitle className="text-2xl">{tCredential('myCredentials')}</CardTitle>
-            <p className="mt-1 text-sm text-body">제출한 인증 상태를 확인하고 재제출을 관리하세요.</p>
+            <p className="mt-1 text-sm text-body">{tCredential('subtitle')}</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger render={<Button variant="cta" className="min-h-11 w-full sm:w-auto" />} onClick={resetForm}>
@@ -317,15 +324,15 @@ export default function CredentialsDashboardPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
               <DialogHeader>
-                <DialogTitle>{resubmitId ? '인증 재제출' : tCredential('addCredential')}</DialogTitle>
+                <DialogTitle>{resubmitId ? tCredential('resubmitTitle') : tCredential('addCredential')}</DialogTitle>
                 <DialogDescription>
-                  유형별 필수 정보를 입력하고 증빙 서류를 업로드하세요.
+                  {tCredential('formDescription')}
                 </DialogDescription>
               </DialogHeader>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-900" htmlFor="credential-type">유형</label>
+                  <label className="text-sm font-medium text-slate-900" htmlFor="credential-type">{tCredential('typeLabel')}</label>
                   <select
                     id="credential-type"
                     className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
@@ -334,7 +341,7 @@ export default function CredentialsDashboardPage() {
                   >
                     {CREDENTIAL_TYPES.map((item) => (
                       <option key={item} value={item}>
-                        {CREDENTIAL_TYPE_LABELS[item].ko}
+                        {CREDENTIAL_TYPE_LABELS[item][isKo ? 'ko' : 'en']}
                       </option>
                     ))}
                   </select>
@@ -342,7 +349,7 @@ export default function CredentialsDashboardPage() {
 
                 {(type === 'SAT' || type === 'ACT') ? (
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-slate-900" htmlFor="score-number">점수</label>
+                    <label className="text-sm font-medium text-slate-900" htmlFor="score-number">{tCredential('score')}</label>
                     <Input
                       id="score-number"
                       type="number"
@@ -355,11 +362,11 @@ export default function CredentialsDashboardPage() {
                 {type === 'AP' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="ap-subject">과목</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="ap-subject">{tCredential('subject')}</label>
                       <Input id="ap-subject" value={apSubject} onChange={(event) => setApSubject(event.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="ap-score">점수 (1-5)</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="ap-score">{tCredential('scoreRangeAp')}</label>
                       <Input id="ap-score" type="number" min={1} max={5} value={score} onChange={(event) => setScore(event.target.value)} />
                     </div>
                   </div>
@@ -368,11 +375,11 @@ export default function CredentialsDashboardPage() {
                 {type === 'IB' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="ib-subject">과목 (또는 Total)</label>
-                      <Input id="ib-subject" value={ibSubject} onChange={(event) => setIbSubject(event.target.value)} placeholder="예: Math AA HL / Total" />
+                      <label className="text-sm font-medium text-slate-900" htmlFor="ib-subject">{tCredential('subjectOrTotal')}</label>
+                      <Input id="ib-subject" value={ibSubject} onChange={(event) => setIbSubject(event.target.value)} placeholder="Math AA HL / Total" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="ib-score">점수 (1-7 또는 1-45)</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="ib-score">{tCredential('scoreRangeIb')}</label>
                       <Input id="ib-score" value={score} onChange={(event) => setScore(event.target.value)} />
                     </div>
                   </div>
@@ -381,7 +388,7 @@ export default function CredentialsDashboardPage() {
                 {type === 'LANGUAGE_TEST' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="language-test">시험명</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="language-test">{tCredential('type')}</label>
                       <select
                         id="language-test"
                         className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
@@ -394,7 +401,7 @@ export default function CredentialsDashboardPage() {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="language-score">점수</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="language-score">{tCredential('score')}</label>
                       <Input id="language-score" value={score} onChange={(event) => setScore(event.target.value)} />
                     </div>
                   </div>
@@ -403,20 +410,20 @@ export default function CredentialsDashboardPage() {
                 {type === 'SCHOOL_CERT' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1 sm:col-span-2">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="school-name">학교명</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="school-name">{tCredential('schoolName')}</label>
                       <Input id="school-name" value={schoolName} onChange={(event) => setSchoolName(event.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="school-cert-type">구분</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="school-cert-type">{tCredential('schoolType')}</label>
                       <select
                         id="school-cert-type"
                         className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm"
                         value={schoolCertType}
                         onChange={(event) => setSchoolCertType(event.target.value as SchoolCertType)}
                       >
-                        <option value="재학">재학</option>
-                        <option value="졸업">졸업</option>
-                        <option value="합격">합격</option>
+                        <option value="재학">{tCredential('schoolEnrolled')}</option>
+                        <option value="졸업">{tCredential('schoolGraduated')}</option>
+                        <option value="합격">{tCredential('schoolAccepted')}</option>
                       </select>
                     </div>
                   </div>
@@ -425,7 +432,7 @@ export default function CredentialsDashboardPage() {
                 {type === 'EXPERIENCE' ? (
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-slate-900" htmlFor="experience-description">경력 설명</label>
+                      <label className="text-sm font-medium text-slate-900" htmlFor="experience-description">{tCredential('experienceDescription')}</label>
                       <Textarea
                         id="experience-description"
                         value={experienceDescription}
@@ -435,11 +442,11 @@ export default function CredentialsDashboardPage() {
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="text-sm font-medium text-slate-900" htmlFor="period-start">시작일</label>
+                        <label className="text-sm font-medium text-slate-900" htmlFor="period-start">{tCredential('periodStart')}</label>
                         <Input id="period-start" type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-sm font-medium text-slate-900" htmlFor="period-end">종료일</label>
+                        <label className="text-sm font-medium text-slate-900" htmlFor="period-end">{tCredential('periodEnd')}</label>
                         <Input id="period-end" type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} />
                       </div>
                     </div>
@@ -455,17 +462,17 @@ export default function CredentialsDashboardPage() {
                     onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
                   />
                   <p className="text-xs text-muted-foreground">{tCredential('fileTypes')}</p>
-                  <p className="text-sm text-amber-700">⚠️ 주민등록번호가 포함된 서류는 번호를 가린 후 업로드해주세요</p>
+                  <p className="text-sm text-amber-700">{tCredential('rrnWarning')}</p>
                 </div>
 
                 {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
                 <div className="flex flex-col justify-end gap-2 sm:flex-row">
                   <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => setDialogOpen(false)}>
-                    닫기
+                    {tCredential('close')}
                   </Button>
                   <Button type="submit" variant="cta" className="min-h-11 w-full sm:w-auto" disabled={saving || isApprovedTarget}>
-                    {saving ? '제출 중...' : '제출'}
+                    {saving ? tCredential('submitting') : tCommon('submit')}
                   </Button>
                 </div>
               </form>
@@ -474,11 +481,11 @@ export default function CredentialsDashboardPage() {
         </CardHeader>
 
         <CardContent>
-          {loading ? <p className="text-sm text-body">불러오는 중...</p> : null}
+          {loading ? <LoadingSkeleton variant="list" count={3} /> : null}
 
-          {!loading && credentials.length === 0 ? (
-            <p className="text-sm text-body">아직 제출한 인증이 없습니다.</p>
-          ) : null}
+          {!loading && error ? <ErrorFallback message={error} onRetry={() => void loadCredentials()} /> : null}
+
+          {!loading && !error && credentials.length === 0 ? <EmptyState message={tCredential('noCredentialsYet')} /> : null}
 
           <div className="space-y-3">
             {credentials.map((credential) => (
@@ -486,21 +493,25 @@ export default function CredentialsDashboardPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-medium text-slate-900">{credential.label}</p>
-                    <p className="text-sm text-body">{CREDENTIAL_TYPE_LABELS[credential.type].ko}</p>
+                    <p className="text-sm text-body">{CREDENTIAL_TYPE_LABELS[credential.type][isKo ? 'ko' : 'en']}</p>
                   </div>
-                  {statusBadge(credential.status)}
+                  {statusBadge(credential.status, {
+                    approved: tCredential('approved'),
+                    rejected: tCredential('rejected'),
+                    pending: tCredential('pending'),
+                  })}
                 </div>
 
                 {credential.status === 'APPROVED' ? (
                   <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                    <p>인증된 항목은 수정할 수 없습니다. 수정이 필요한 경우 관리자에게 이메일로 문의해주세요. (help@samcheck.kr)</p>
-                    {credential.verificationNote ? <p className="mt-1">검토 메모: {credential.verificationNote}</p> : null}
+                    <p>{tCredential('approvedLocked')}</p>
+                    {credential.verificationNote ? <p className="mt-1">{tCredential('verificationNote')}: {credential.verificationNote}</p> : null}
                   </div>
                 ) : null}
 
                 {credential.status === 'REJECTED' ? (
                   <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
-                    <p>반려 사유: {credential.rejectionReason ?? '사유 없음'}</p>
+                    <p>{tCredential('rejectionReason')}: {credential.rejectionReason ?? tCredential('noReason')}</p>
                   </div>
                 ) : null}
 
@@ -513,7 +524,7 @@ export default function CredentialsDashboardPage() {
 
                   {credential.status !== 'APPROVED' ? (
                     <Button type="button" variant="destructive" className="min-h-11 w-full sm:w-auto" onClick={() => handleDelete(credential)}>
-                      삭제
+                      {tCommon('delete')}
                     </Button>
                   ) : null}
                 </div>
@@ -522,7 +533,6 @@ export default function CredentialsDashboardPage() {
           </div>
 
           {message ? <p className="mt-4 text-sm text-emerald-600">{message}</p> : null}
-          {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         </CardContent>
       </Card>
     </div>
