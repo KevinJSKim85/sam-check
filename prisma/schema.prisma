@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ AUTH (Auth.js v5 compatible) ============
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(STUDENT)
+  locale        String    @default("ko")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  tutorProfile     TutorProfile?
+  sentMessages     Message[] @relation("sender")
+  receivedMessages Message[] @relation("receiver")
+  reviews          Review[]  @relation("author")
+}
+
+enum UserRole {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+model Account {
+  provider          String
+  providerAccountId String
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  id_token          String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ============ TUTOR PROFILES ============
+
+model TutorProfile {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline      String?
+  bio           String?      @db.Text
+  subjects      String[]
+  curricula     String[]
+  hourlyRate    Int?
+  teachingMode  TeachingMode @default(BOTH)
+  university    String?
+  degree        String?
+  isPublished   Boolean      @default(false)
+  averageRating Float        @default(0)
+  totalReviews  Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  credentials Credential[]
+  reviews     Review[]
+}
+
+enum TeachingMode {
+  ONLINE
+  OFFLINE
+  BOTH
+}
+
+// ============ CREDENTIALS & VERIFICATION ============
+
+model Credential {
+  id               String             @id @default(cuid())
+  tutorProfileId   String
+  tutorProfile     TutorProfile       @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  type             CredentialType
+  label            String
+  scoreValue       String?
+  description      String?
+  documentPath     String?
+  documentName     String?
+  mimeType         String?
+  sizeBytes        Int?
+  status           VerificationStatus @default(PENDING)
+  rejectionReason  String?
+  submissionCount  Int                @default(1)
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  verificationNote String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+enum CredentialType {
+  SAT
+  ACT
+  AP
+  IB
+  LANGUAGE_TEST
+  SCHOOL_CERT
+  EXPERIENCE
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+// ============ MESSAGES ============
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("sender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, isRead])
+}
+
+// ============ REVIEWS ============
+
+model Review {
+  id             String       @id @default(cuid())
+  tutorProfileId String
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation("author", fields: [authorId], references: [id])
+  rating         Int
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([tutorProfileId, authorId])
+}
