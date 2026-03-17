@@ -2,7 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AuthSessionProvider } from '@/components/providers/session-provider';
 import { Header } from '@/components/layout/header';
@@ -19,9 +19,15 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
-  title: 'Sam-Check',
-  description: 'Find verified tutors',
+  title: '쌤체크 | Sam-Check',
+  description: '인증된 튜터를 가장 빠르게 찾는 방법',
 };
 
 export default async function LocaleLayout({
