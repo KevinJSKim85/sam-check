@@ -167,11 +167,11 @@ export default function ConversationPage() {
               <div key={item.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm sm:max-w-[75%] ${
-                    isMine ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'
+                    isMine ? 'bg-primary text-white' : 'bg-slate-100 text-slate-900'
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{item.content}</p>
-                  <p className={`mt-1 text-[11px] ${isMine ? 'text-blue-100' : 'text-slate-500'}`}>
+                  <p className={`mt-1 text-[11px] ${isMine ? 'text-primary-100' : 'text-slate-500'}`}>
                     {new Date(item.createdAt).toLocaleString(locale)}
                   </p>
                 </div>

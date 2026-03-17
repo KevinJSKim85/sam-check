@@ -50,7 +50,7 @@ type DraftById = Record<string, { verificationNote: string; rejectionReason: str
 
 function renderStatusBadge(status: QueueStatus, labels: { underReview: string; pending: string }) {
   if (status === 'UNDER_REVIEW') {
-    return <Badge className="bg-blue-100 text-blue-800">{labels.underReview}</Badge>
+    return <Badge className="bg-primary-50 text-primary">{labels.underReview}</Badge>
   }
 
   return <Badge className="bg-amber-100 text-amber-800">{labels.pending}</Badge>

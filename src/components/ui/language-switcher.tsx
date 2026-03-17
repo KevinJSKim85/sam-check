@@ -17,7 +17,7 @@ export function LanguageSwitcher() {
     <button
       type="button"
       onClick={switchLocale}
-      className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+      className="rounded-md bg-primary px-4 py-2 text-white hover:opacity-90"
     >
       {locale === 'ko' ? 'English' : '한국어'}
     </button>

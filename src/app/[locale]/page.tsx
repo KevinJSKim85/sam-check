@@ -103,8 +103,8 @@ export default function HomePage() {
             <p className="mt-3 max-w-3xl text-body">{t('trustDescription')}</p>
             <div className="mt-5 flex flex-wrap gap-2">
               {['SAT/ACT', 'AP/IB', 'TOEFL/DELF', t('trustBadgeSchoolCert'), t('trustBadgeExperience')].map((label) => (
-                <Badge key={label} variant="outline" className="border-accent/30 bg-white px-3 py-1.5 text-accent-800">
-                  <ShieldCheck className="mr-1 size-3" />
+                <Badge key={label} variant="outline" className="h-auto border-accent/30 bg-white px-4 py-2 text-sm text-accent-800">
+                  <ShieldCheck className="mr-1.5 size-4" />
                   {label}
                 </Badge>
               ))}

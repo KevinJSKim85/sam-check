@@ -17,14 +17,14 @@ export default function AuthErrorPage() {
       {isEmailRequired ? (
         <>
           <p className="text-base text-red-600">{t('emailRequired')}</p>
-          <p className="text-sm text-gray-600">{t('emailRequiredFallback')}</p>
+          <p className="text-sm text-body">{t('emailRequiredFallback')}</p>
         </>
       ) : (
         <p className="text-base text-red-600">{t('genericError')}</p>
       )}
       <Link
         href="/auth/login"
-        className="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+        className="inline-flex min-h-11 items-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
       >
         {t('loginTitle')}
       </Link>
