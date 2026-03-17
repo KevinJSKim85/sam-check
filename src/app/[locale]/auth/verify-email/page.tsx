@@ -76,7 +76,7 @@ export default async function VerifyEmailPage({ params, searchParams }: VerifyEm
     status = await confirmEmailVerification(token, email);
   }
 
-  const safeRedirect = redirectTo && redirectTo.startsWith('/') ? redirectTo : `/${locale}`;
+  const safeRedirect = redirectTo?.startsWith('/') ? redirectTo : `/${locale}`;
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-md items-center px-4 py-12 sm:px-6">
