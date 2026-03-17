@@ -2,7 +2,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Kakao from "next-auth/providers/kakao";
-import Naver from "next-auth/providers/naver";
 import { prisma } from "@/lib/db";
 
 function getEnv(name: string) {
@@ -22,11 +21,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 			clientSecret: getEnv("AUTH_KAKAO_SECRET"),
 			allowDangerousEmailAccountLinking: true,
 		}),
-		Naver({
-			clientId: getEnv("AUTH_NAVER_ID"),
-			clientSecret: getEnv("AUTH_NAVER_SECRET"),
-			allowDangerousEmailAccountLinking: true,
-		}),
 	],
 	secret: process.env.AUTH_SECRET ?? "sam-check-dev-auth-secret",
 	trustHost: true,
@@ -35,10 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 	},
 	callbacks: {
 		async signIn({ user, account }) {
-			if (
-				(account?.provider === "kakao" || account?.provider === "naver") &&
-				!user.email
-			) {
+			if (account?.provider === "kakao" && !user.email) {
 				return "/auth/error?error=EmailRequired";
 			}
 

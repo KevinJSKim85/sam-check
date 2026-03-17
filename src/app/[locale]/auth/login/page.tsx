@@ -21,14 +21,6 @@ export default async function LoginPage({ params }: LoginPageProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <form action={socialSignInAction} className="w-full">
-            <input type="hidden" name="provider" value="naver" />
-            <input type="hidden" name="redirectTo" value={`/${locale}`} />
-            <Button type="submit" variant="socialNaver" className="w-full justify-center" size="lg">
-              {t('loginWith', { provider: 'Naver' })}
-            </Button>
-          </form>
-
-          <form action={socialSignInAction} className="w-full">
             <input type="hidden" name="provider" value="kakao" />
             <input type="hidden" name="redirectTo" value={`/${locale}`} />
             <Button type="submit" variant="socialKakao" className="w-full justify-center" size="lg">
