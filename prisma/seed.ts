@@ -5,8 +5,11 @@ import {
   UserRole,
   VerificationStatus,
 } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
+
+const SAMPLE_PASSWORD = 'Sam5928!'
 
 async function main() {
   await prisma.$transaction([
@@ -20,11 +23,37 @@ async function main() {
     prisma.user.deleteMany(),
   ])
 
+  const hashedPassword = await bcrypt.hash(SAMPLE_PASSWORD, 10)
+
   const admin = await prisma.user.create({
     data: {
       name: 'Sam-Check Admin',
       email: 'admin@samcheck.kr',
+      password: hashedPassword,
+      emailVerified: new Date(),
       role: UserRole.ADMIN,
+      locale: 'ko',
+    },
+  })
+
+  await prisma.user.create({
+    data: {
+      name: 'Sample Tutor',
+      email: 'sample@tutor.sam',
+      password: hashedPassword,
+      emailVerified: new Date(),
+      role: UserRole.TUTOR,
+      locale: 'ko',
+    },
+  })
+
+  await prisma.user.create({
+    data: {
+      name: 'Sample Student',
+      email: 'sample@student.sam',
+      password: hashedPassword,
+      emailVerified: new Date(),
+      role: UserRole.STUDENT,
       locale: 'ko',
     },
   })
