@@ -17,8 +17,7 @@ const GRADES = [
 ];
 
 const SCHOOL_TYPES = [
-  { id: 'international', label: { ko: '국제학교', en: 'International School' } },
-  { id: 'us', label: { ko: 'US 커리큘럼', en: 'American Curriculum' } },
+  { id: 'us', label: { ko: '미국식 커리큘럼', en: 'American Curriculum' } },
   { id: 'canada', label: { ko: '캐나다', en: 'Canadian Curriculum' } },
   { id: 'uk', label: { ko: '영국식', en: 'British Curriculum' } },
   { id: 'other', label: { ko: '기타 (일반고, 과학고, 특목고 등)', en: 'Other (General, Science, Special Purpose HS)' } },
@@ -39,12 +38,8 @@ const SUBJECT_OPTIONS = [
 ];
 
 const LEVEL_OPTIONS: Record<string, Array<{ id: string; label: string }>> = {
-  international: [
-    { id: 'IB', label: 'IB' },
-    { id: 'IGCSE', label: 'IGCSE' },
-    { id: 'A_LEVEL', label: 'A-Level' },
-  ],
   us: [
+    { id: 'IB', label: 'IB' },
     { id: 'AP', label: 'AP' },
     { id: 'SAT', label: 'SAT' },
     { id: 'ACT', label: 'ACT' },
@@ -343,7 +338,7 @@ export function TutorFinderFlow() {
               {locale === 'ko' ? '여러 개 선택 가능합니다' : 'You can select multiple'}
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-              {(LEVEL_OPTIONS[schoolType || 'international'] || LEVEL_OPTIONS.international).map(l => {
+              {(LEVEL_OPTIONS[schoolType || 'us'] || LEVEL_OPTIONS.us).map(l => {
                 const selected = levels.includes(l.id);
                 const labelText = typeof l.label === 'object' ? t(l.label as { ko: string; en: string }, locale) : l.label;
                 return (

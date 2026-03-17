@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { SubjectIcon } from '@/components/features/home/subject-icon';
+import { TutorFinderFlow } from '@/components/features/tutors/tutor-finder-flow';
 
 const STEP_ICONS = [Search, ShieldCheck, MessageSquare] as const;
 
@@ -15,30 +16,10 @@ export default function HomePage() {
   const locale = useLocale();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-14 sm:px-6 lg:px-8">
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary-700 to-primary-900 px-6 py-16 text-white shadow-xl sm:px-12 sm:py-20">
-        <div className="absolute -top-24 right-0 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-20 left-16 h-52 w-52 rounded-full bg-cta/20 blur-2xl" />
-        <div className="absolute right-12 bottom-12 hidden h-40 w-40 rounded-full bg-accent/15 blur-2xl lg:block" />
-        <div className="relative flex max-w-3xl flex-col gap-6">
-          <Badge className="w-fit border-white/30 bg-white/15 text-white">{t('heroBadge')}</Badge>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl">{t('heroTitle')}</h1>
-          <p className="max-w-xl text-base text-white/90 sm:text-lg">{t('heroDescription')}</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Button variant="cta" size="lg" render={<Link href="/tutors" />} className="min-h-12 w-full px-8 text-base sm:w-auto">
-              {t('heroPrimaryCta')}
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              render={<Link href="/auth/signup" />}
-              className="min-h-12 w-full border-white/40 bg-white/10 text-white hover:bg-white/20 sm:w-auto"
-            >
-              {t('heroSecondaryCta')}
-            </Button>
-          </div>
-        </div>
-      </section>
+    <div className="flex w-full flex-col">
+      <TutorFinderFlow />
+
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-14 sm:px-6 lg:px-8">
 
       <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
@@ -148,6 +129,7 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
+      </div>
     </div>
   );
 }
