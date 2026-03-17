@@ -500,211 +500,217 @@ export function TutorsListingClient({
 		verifiedOnly,
 	]);
 
+	const activeFilterCount =
+		selectedCurricula.length +
+		selectedSubjects.length +
+		(minPrice ? 1 : 0) +
+		(maxPrice ? 1 : 0) +
+		(teachingMode ? 1 : 0) +
+		(verifiedOnly ? 1 : 0);
+
 	return (
-		<div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-			<div className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+		<div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+			<div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
 				<div className="relative">
-					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+					<Search className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-slate-400" />
 					<Input
 						value={keywordInput}
 						onChange={(event) => setKeywordInput(event.target.value)}
 						placeholder={tTutor("searchPlaceholder")}
-						className="h-11 rounded-xl border-slate-200 pl-9"
+						className="h-12 rounded-xl border-slate-200 pl-11 text-base"
 					/>
 				</div>
-
-				{activeFilterTags.length > 0 && (
-					<div className="mt-4 flex flex-wrap gap-2">
-						{activeFilterTags.map((tag) => (
-							<button
-								key={tag.key}
-								type="button"
-								onClick={tag.onRemove}
-								className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/30 bg-primary-50 px-3 py-1.5 text-sm text-primary-800"
-							>
-								{tag.label}
-								<X className="size-3.5" />
-							</button>
-						))}
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => replaceSearchState(new URLSearchParams())}
-							className="min-h-11"
-						>
-							{tTutor("clearFilters")}
-						</Button>
-					</div>
-				)}
 			</div>
 
-			<div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-				<aside className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:block">
-					<FiltersPanel
-						locale={locale}
-						selectedCurricula={selectedCurricula}
-						selectedSubjects={selectedSubjects}
-						minPrice={minPrice}
-						maxPrice={maxPrice}
-						teachingMode={teachingMode}
-						verifiedOnly={verifiedOnly}
-						onToggleCurriculum={(value) => updateArrayParam("curricula", value)}
-						onToggleSubject={(value) => updateArrayParam("subjects", value)}
-						onPriceChange={(type, value) => updateParam(type, value || null)}
-						onTeachingModeChange={(value) =>
-							updateParam("teachingMode", value || null)
+			<div className="mb-4 flex flex-wrap items-center gap-2">
+				<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+					<SheetTrigger
+						render={
+							<Button
+								variant="outline"
+								className="relative min-h-10 gap-1.5 rounded-full border-slate-200 px-4"
+							/>
 						}
-						onVerifiedOnlyChange={(value) =>
-							updateParam("verifiedOnly", value ? "true" : null)
-						}
-						onClear={() => replaceSearchState(new URLSearchParams())}
-					/>
-				</aside>
+					>
+						<SlidersHorizontal className="size-4" />
+						{tTutor("filter")}
+						{activeFilterCount > 0 && (
+							<span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+								{activeFilterCount}
+							</span>
+						)}
+					</SheetTrigger>
+					<SheetContent
+						side="right"
+						className="w-full max-w-sm overflow-y-auto"
+					>
+						<SheetHeader>
+							<SheetTitle>{tTutor("filter")}</SheetTitle>
+						</SheetHeader>
+						<div className="px-4 pb-8">
+							<FiltersPanel
+								locale={locale}
+								selectedCurricula={selectedCurricula}
+								selectedSubjects={selectedSubjects}
+								minPrice={minPrice}
+								maxPrice={maxPrice}
+								teachingMode={teachingMode}
+								verifiedOnly={verifiedOnly}
+								onToggleCurriculum={(value) =>
+									updateArrayParam("curricula", value)
+								}
+								onToggleSubject={(value) =>
+									updateArrayParam("subjects", value)
+								}
+								onPriceChange={(type, value) =>
+									updateParam(type, value || null)
+								}
+								onTeachingModeChange={(value) =>
+									updateParam("teachingMode", value || null)
+								}
+								onVerifiedOnlyChange={(value) =>
+									updateParam("verifiedOnly", value ? "true" : null)
+								}
+								onClear={() => replaceSearchState(new URLSearchParams())}
+							/>
+						</div>
+					</SheetContent>
+				</Sheet>
 
-				<div>
-					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-						<p className="text-sm font-medium text-slate-700">
-							{tTutor("tutorsCount", { count: data.pagination.total })}
-						</p>
-						<div className="flex items-center gap-2">
-							<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-								<SheetTrigger
-									render={
-										<Button
-											variant="outline"
-											className="inline-flex min-h-11 lg:hidden"
-										/>
+				<label className="hidden min-h-10 cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-700 transition-colors hover:border-primary/40 md:inline-flex">
+					<input
+						type="checkbox"
+						className="size-3.5 rounded border-slate-300 text-primary focus:ring-primary"
+						checked={verifiedOnly}
+						onChange={(event) =>
+							updateParam("verifiedOnly", event.target.checked ? "true" : null)
+						}
+					/>
+					{tTutor("verifiedOnly")}
+				</label>
+
+				<div className="ml-auto flex items-center gap-2">
+					<p className="hidden text-sm text-body sm:block">
+						{tTutor("tutorsCount", { count: data.pagination.total })}
+					</p>
+					<Select
+						value={sort}
+						onValueChange={(value) => updateParam("sort", value)}
+					>
+						<SelectTrigger className="h-10 w-[140px] rounded-full border-slate-200 bg-white text-sm">
+							<SelectValue placeholder={tTutor("sortBy")} />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="newest">{tTutor("sortNewest")}</SelectItem>
+							<SelectItem value="rating">{tTutor("sortRating")}</SelectItem>
+							<SelectItem value="priceLow">{tTutor("sortPriceLow")}</SelectItem>
+							<SelectItem value="priceHigh">{tTutor("sortPriceHigh")}</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+
+			{activeFilterTags.length > 0 && (
+				<div className="mb-6 flex flex-wrap gap-2">
+					{activeFilterTags.map((tag) => (
+						<button
+							key={tag.key}
+							type="button"
+							onClick={tag.onRemove}
+							className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary-50 px-3 py-1 text-sm text-primary-800 transition-colors hover:bg-primary-100"
+						>
+							{tag.label}
+							<X className="size-3.5" />
+						</button>
+					))}
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => replaceSearchState(new URLSearchParams())}
+						className="min-h-8 rounded-full text-body"
+					>
+						{tTutor("clearFilters")}
+					</Button>
+				</div>
+			)}
+
+			<p className="mb-4 text-sm text-body sm:hidden">
+				{tTutor("tutorsCount", { count: data.pagination.total })}
+			</p>
+
+			{loading ? (
+				<LoadingSkeleton variant="card-grid" count={4} />
+			) : error ? (
+				<ErrorFallback
+					message={tTutor("noTutors")}
+					onRetry={() => {
+						const next = new URLSearchParams(searchState.toString());
+						replaceSearchState(next);
+					}}
+				/>
+			) : data.items.length === 0 ? (
+				<EmptyState message={tTutor("noTutors")} />
+			) : (
+				<>
+					<div className="space-y-4">
+						{data.items.map((tutor) => (
+							<TutorCard key={tutor.id} tutor={tutor} />
+						))}
+					</div>
+
+					{data.pagination.totalPages > 1 ? (
+						<div className="mt-10 flex items-center justify-center gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								className="min-h-10 rounded-full"
+								disabled={currentPage <= 1}
+								onClick={() =>
+									updateParam(
+										"page",
+										String(Math.max(1, currentPage - 1)),
+										false,
+									)
+								}
+							>
+								<ChevronLeft className="size-4" />
+							</Button>
+							{pageNumbers.map((pageNumber) => (
+								<Button
+									key={pageNumber}
+									variant={
+										pageNumber === currentPage ? "default" : "outline"
+									}
+									size="sm"
+									className="min-h-10 min-w-10 rounded-full"
+									onClick={() =>
+										updateParam("page", String(pageNumber), false)
 									}
 								>
-									<SlidersHorizontal className="size-4" />
-									{tTutor("filter")}
-								</SheetTrigger>
-								<SheetContent
-									side="right"
-									className="w-full max-w-sm overflow-y-auto"
-								>
-									<SheetHeader>
-										<SheetTitle>{tTutor("filter")}</SheetTitle>
-									</SheetHeader>
-									<div className="px-4 pb-8">
-										<FiltersPanel
-											locale={locale}
-											selectedCurricula={selectedCurricula}
-											selectedSubjects={selectedSubjects}
-											minPrice={minPrice}
-											maxPrice={maxPrice}
-											teachingMode={teachingMode}
-											verifiedOnly={verifiedOnly}
-											onToggleCurriculum={(value) =>
-												updateArrayParam("curricula", value)
-											}
-											onToggleSubject={(value) =>
-												updateArrayParam("subjects", value)
-											}
-											onPriceChange={(type, value) =>
-												updateParam(type, value || null)
-											}
-											onTeachingModeChange={(value) =>
-												updateParam("teachingMode", value || null)
-											}
-											onVerifiedOnlyChange={(value) =>
-												updateParam("verifiedOnly", value ? "true" : null)
-											}
-											onClear={() => replaceSearchState(new URLSearchParams())}
-										/>
-									</div>
-								</SheetContent>
-							</Sheet>
-
-							<Select
-								value={sort}
-								onValueChange={(value) => updateParam("sort", value)}
+									{pageNumber}
+								</Button>
+							))}
+							<Button
+								variant="outline"
+								size="sm"
+								className="min-h-10 rounded-full"
+								disabled={currentPage >= data.pagination.totalPages}
+								onClick={() =>
+									updateParam(
+										"page",
+										String(
+											Math.min(data.pagination.totalPages, currentPage + 1),
+										),
+										false,
+									)
+								}
 							>
-								<SelectTrigger className="h-11 w-[150px] bg-white">
-									<SelectValue placeholder={tTutor("sortBy")} />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="newest">{tTutor("sortNewest")}</SelectItem>
-									<SelectItem value="rating">{tTutor("sortRating")}</SelectItem>
-									<SelectItem value="priceLow">{tTutor("sortPriceLow")}</SelectItem>
-									<SelectItem value="priceHigh">{tTutor("sortPriceHigh")}</SelectItem>
-								</SelectContent>
-							</Select>
+								<ChevronRight className="size-4" />
+							</Button>
 						</div>
-					</div>
-
-					{loading ? (
-						<LoadingSkeleton variant="card-grid" count={6} />
-					) : error ? (
-						<ErrorFallback
-							message={tTutor("noTutors")}
-							onRetry={() => {
-								const next = new URLSearchParams(searchState.toString());
-								replaceSearchState(next);
-							}}
-						/>
-					) : data.items.length === 0 ? (
-						<EmptyState message={tTutor("noTutors")} />
-					) : (
-						<>
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-								{data.items.map((tutor) => (
-									<TutorCard key={tutor.id} tutor={tutor} />
-								))}
-							</div>
-
-							{data.pagination.totalPages > 1 ? (
-								<div className="mt-8 flex items-center justify-center gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={currentPage <= 1}
-										onClick={() =>
-											updateParam(
-												"page",
-												String(Math.max(1, currentPage - 1)),
-												false,
-											)
-										}
-									>
-										<ChevronLeft className="size-4" />
-									</Button>
-									{pageNumbers.map((pageNumber) => (
-										<Button
-											key={pageNumber}
-											variant={
-												pageNumber === currentPage ? "default" : "outline"
-											}
-											size="sm"
-											onClick={() =>
-												updateParam("page", String(pageNumber), false)
-											}
-										>
-											{pageNumber}
-										</Button>
-									))}
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={currentPage >= data.pagination.totalPages}
-										onClick={() =>
-											updateParam(
-												"page",
-												String(
-													Math.min(data.pagination.totalPages, currentPage + 1),
-												),
-												false,
-											)
-										}
-									>
-										<ChevronRight className="size-4" />
-									</Button>
-								</div>
-							) : null}
-						</>
-					)}
-				</div>
-			</div>
+					) : null}
+				</>
+			)}
 		</div>
 	);
 }

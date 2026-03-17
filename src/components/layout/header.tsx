@@ -7,6 +7,7 @@ import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/user-menu';
 import { MobileNav } from '@/components/layout/mobile-nav';
+import { Logo } from '@/components/brand/logo';
 
 export function Header() {
   const session = use(auth());
@@ -24,22 +25,22 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/20 bg-primary text-white shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-primary/10 bg-white shadow-sm">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            {tCommon('title')}
+          <Link href="/" className="transition-opacity hover:opacity-80">
+            <Logo theme="light" />
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-            <Link href="/" className="text-white/90 transition hover:text-white">
+          <nav className="hidden items-center gap-6 text-sm font-semibold md:flex">
+            <Link href="/" className="text-primary/70 transition hover:text-primary">
               {tNav('home')}
             </Link>
-            <Link href="/tutors" className="text-white/90 transition hover:text-white">
+            <Link href="/tutors" className="text-primary/70 transition hover:text-primary">
               {tNav('findTutor')}
             </Link>
             <Link
               href={session?.user ? '/messages' : '/auth/login'}
-              className="inline-flex items-center gap-1 text-white/90 transition hover:text-white"
+              className="inline-flex items-center gap-1 text-primary/70 transition hover:text-primary"
             >
               {tNav('messages')}
               {unreadCount > 0 ? (
@@ -55,13 +56,13 @@ export function Header() {
           <LanguageSwitcher />
           {session?.user ? (
             <div className="flex items-center gap-2">
-              <span className="max-w-32 truncate text-sm text-white/90">{session.user.name}</span>
+              <span className="max-w-32 truncate text-sm text-body">{session.user.name}</span>
               <UserMenu user={session.user} />
             </div>
           ) : (
             <Button
               render={<Link href="/auth/login" />}
-              className="bg-white text-primary hover:bg-white/90"
+              className="bg-primary text-white hover:bg-primary-600"
             >
               {tCommon('login')}
             </Button>
