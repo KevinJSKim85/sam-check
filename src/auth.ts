@@ -1,5 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { compare } from "bcryptjs";
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Kakao from "next-auth/providers/kakao";
 import { prisma } from "@/lib/db";
@@ -11,6 +13,53 @@ function getEnv(name: string) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
 	adapter: PrismaAdapter(prisma),
 	providers: [
+		Credentials({
+			name: "Email",
+			credentials: {
+				email: { label: "Email", type: "email" },
+				password: { label: "Password", type: "password" },
+			},
+			async authorize(credentials) {
+				const email = credentials?.email?.trim().toLowerCase();
+				const password = credentials?.password;
+
+				if (!email || !password) {
+					return null;
+				}
+
+				const user = await prisma.user.findUnique({
+					where: { email },
+					select: {
+						id: true,
+						email: true,
+						name: true,
+						image: true,
+						role: true,
+						emailVerified: true,
+						password: true,
+					},
+				});
+
+				if (!user?.password) {
+					return null;
+				}
+
+				const isPasswordValid = await compare(password, user.password);
+
+				if (!isPasswordValid) {
+					return null;
+				}
+
+				return {
+					id: user.id,
+					email: user.email,
+					name: user.name,
+					image: user.image,
+					role: user.role,
+					emailVerified: user.emailVerified,
+				};
+			},
+		}),
 		Google({
 			clientId: getEnv("AUTH_GOOGLE_ID"),
 			clientSecret: getEnv("AUTH_GOOGLE_SECRET"),
@@ -29,6 +78,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 	},
 	callbacks: {
 		async signIn({ user, account }) {
+			if (account?.provider === "credentials" && user.email) {
+				const credentialUser = await prisma.user.findUnique({
+					where: { email: user.email },
+					select: { emailVerified: true },
+				});
+
+				if (!credentialUser?.emailVerified) {
+					return `/auth/verify-email?status=required&email=${encodeURIComponent(user.email)}`;
+				}
+			}
+
 			if (account?.provider === "kakao" && !user.email) {
 				return "/auth/error?error=EmailRequired";
 			}

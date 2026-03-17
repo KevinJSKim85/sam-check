@@ -37,9 +37,9 @@
   },
   "auth": {
     "loginTitle": "로그인",
-    "loginDescription": "소셜 계정으로 빠르게 로그인하세요",
+    "loginDescription": "소셜 계정 또는 이메일/비밀번호로 로그인하세요",
     "signupTitle": "회원가입",
-    "signupDescription": "역할을 선택하고 필수 동의 후 소셜 계정으로 가입하세요",
+    "signupDescription": "역할 선택과 필수 동의 후 소셜 또는 이메일로 가입하세요",
     "selectRole": "회원 유형을 선택해주세요",
     "tutor": "튜터 (선생님)",
     "tutorDesc": "프로필을 등록하고, 학생을 만날 수 있습니다",
@@ -53,6 +53,15 @@
     "hasAccount": "이미 계정이 있으신가요?",
     "loginWith": "{provider}로 로그인",
     "signupWith": "{provider}로 가입",
+    "loginWithEmail": "이메일로 로그인",
+    "signupWithEmail": "이메일로 가입",
+    "loggingIn": "로그인 중...",
+    "creatingAccount": "계정을 생성하는 중...",
+    "or": "또는",
+    "emailLabel": "이메일",
+    "passwordLabel": "비밀번호",
+    "nameLabelOptional": "이름 (선택)",
+    "passwordHint": "비밀번호는 8자 이상이어야 합니다.",
     "emailRequired": "이메일 제공 동의가 필요합니다. 소셜 로그인 설정에서 이메일 제공을 허용해주세요.",
     "consentRequired": "필수 동의 항목입니다",
     "privacyConsent": "개인정보 수집·이용 동의",
@@ -67,7 +76,27 @@
     "optional": "선택",
     "errorTitle": "로그인 오류",
     "genericError": "로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
-    "emailRequiredFallback": "계속하려면 이메일 제공 동의가 필요합니다."
+    "emailRequiredFallback": "계속하려면 이메일 제공 동의가 필요합니다.",
+    "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다.",
+    "invalidEmail": "올바른 이메일 주소를 입력해주세요.",
+    "passwordTooShort": "비밀번호는 8자 이상이어야 합니다.",
+    "emailAlreadyInUse": "이미 사용 중인 이메일입니다.",
+    "goToLogin": "로그인으로 이동",
+    "backHome": "홈으로 이동",
+    "verifyStatusTitle": {
+      "sent": "이메일을 확인해주세요",
+      "required": "이메일 인증이 필요합니다",
+      "verified": "이메일 인증 완료",
+      "expired": "인증 링크가 만료되었습니다",
+      "invalid": "유효하지 않은 인증 링크입니다"
+    },
+    "verifyStatusDescription": {
+      "sent": "인증 링크를 이메일로 보냈습니다. 링크를 열어 계정을 활성화하세요.",
+      "required": "비밀번호 로그인 전에 이메일 인증을 완료해주세요.",
+      "verified": "계정 인증이 완료되었습니다. 이메일/비밀번호로 로그인할 수 있습니다.",
+      "expired": "인증 링크가 만료되었습니다. 새 인증 링크가 필요하면 다시 가입해주세요.",
+      "invalid": "인증 링크가 유효하지 않거나 이미 사용되었습니다."
+    }
   },
   "home": {
     "heroBadge": "국제학교/유학 커리큘럼 전문",

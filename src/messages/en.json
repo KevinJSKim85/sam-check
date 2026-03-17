@@ -37,9 +37,9 @@
   },
   "auth": {
     "loginTitle": "Log in",
-    "loginDescription": "Sign in quickly with your social account",
+    "loginDescription": "Sign in with social login or your email and password",
     "signupTitle": "Sign up",
-    "signupDescription": "Choose your role, complete required consents, and sign up with social login",
+    "signupDescription": "Choose your role, complete required consents, and continue with social or email sign-up",
     "selectRole": "Choose your role",
     "tutor": "Tutor (Teacher)",
     "tutorDesc": "Set up your profile and connect with students",
@@ -53,6 +53,15 @@
     "hasAccount": "Already have an account?",
     "loginWith": "Continue with {provider}",
     "signupWith": "Sign up with {provider}",
+    "loginWithEmail": "Log in with email",
+    "signupWithEmail": "Sign up with email",
+    "loggingIn": "Logging in...",
+    "creatingAccount": "Creating account...",
+    "or": "or",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "nameLabelOptional": "Name (optional)",
+    "passwordHint": "Use at least 8 characters.",
     "emailRequired": "Email sharing consent is required. Please enable email sharing in your social login settings.",
     "consentRequired": "This is a required consent item",
     "privacyConsent": "Consent to collect and use personal information",
@@ -67,7 +76,27 @@
     "optional": "Optional",
     "errorTitle": "Sign-in Error",
     "genericError": "An error occurred while signing in. Please try again.",
-    "emailRequiredFallback": "Email sharing consent is required to continue."
+    "emailRequiredFallback": "Email sharing consent is required to continue.",
+    "invalidCredentials": "Email or password is incorrect.",
+    "invalidEmail": "Please enter a valid email address.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "emailAlreadyInUse": "An account with this email already exists.",
+    "goToLogin": "Go to log in",
+    "backHome": "Back to home",
+    "verifyStatusTitle": {
+      "sent": "Check your email",
+      "required": "Email verification required",
+      "verified": "Email verified",
+      "expired": "Verification link expired",
+      "invalid": "Invalid verification link"
+    },
+    "verifyStatusDescription": {
+      "sent": "We sent a verification link to your email. Open the link to activate your account.",
+      "required": "Please verify your email before logging in with your password.",
+      "verified": "Your account is now verified. You can log in with email and password.",
+      "expired": "This verification link has expired. Please register again to receive a new one.",
+      "invalid": "This verification link is invalid or already used."
+    }
   },
   "home": {
     "heroBadge": "Specialized in international school and study-abroad curricula",

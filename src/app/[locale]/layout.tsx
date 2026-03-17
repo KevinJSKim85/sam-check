@@ -24,6 +24,17 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: '쌤체크 | Sam-Check',
   description: '인증된 튜터를 가장 빠르게 찾는 방법',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: '쌤체크 | Sam-Check',
+    description: '인증된 튜터를 가장 빠르게 찾는 방법. 검증된 프로필만 모아둔 쌤체크에서 안심하고 첫 수업을 시작하세요.',
+    siteName: '쌤체크',
+    type: 'website',
+    images: [{ url: '/logo-light.png', width: 400, height: 200, alt: 'Sam-Check Logo' }],
+  },
 };
 
 export default async function LocaleLayout({
@@ -40,9 +51,9 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={inter.variable}>
       <body
-        className={`${inter.variable} antialiased`}
+        className="antialiased"
       >
         <AuthSessionProvider>
           <NextIntlClientProvider messages={messages}>
