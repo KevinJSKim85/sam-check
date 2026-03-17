@@ -30,6 +30,7 @@
   "nav": {
     "home": "Home",
     "findTutor": "Find Tutors",
+    "tutorMode": "Tutor Mode",
     "messages": "Messages",
     "myPage": "My Page",
     "admin": "Admin",
@@ -97,6 +98,12 @@
       "expired": "This verification link has expired. Please register again to receive a new one.",
       "invalid": "This verification link is invalid or already used."
     }
+  },
+  "tutorMode": {
+    "accessDeniedTitle": "Not a tutor account",
+    "accessDeniedDescription": "This page is only accessible to registered tutor accounts. If you'd like to teach, please sign up as a tutor.",
+    "goHome": "Go Home",
+    "registerAsTutor": "Register as Tutor"
   },
   "home": {
     "heroBadge": "Specialized in international school and study-abroad curricula",

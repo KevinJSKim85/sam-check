@@ -30,6 +30,7 @@
   "nav": {
     "home": "홈",
     "findTutor": "튜터 찾기",
+    "tutorMode": "선생님 모드",
     "messages": "쪽지",
     "myPage": "마이페이지",
     "admin": "관리자",
@@ -97,6 +98,12 @@
       "expired": "인증 링크가 만료되었습니다. 새 인증 링크가 필요하면 다시 가입해주세요.",
       "invalid": "인증 링크가 유효하지 않거나 이미 사용되었습니다."
     }
+  },
+  "tutorMode": {
+    "accessDeniedTitle": "튜터 계정이 아닙니다",
+    "accessDeniedDescription": "이 페이지는 튜터로 등록된 계정만 접근할 수 있습니다. 튜터로 활동하시려면 튜터 계정으로 가입해 주세요.",
+    "goHome": "홈으로",
+    "registerAsTutor": "튜터로 가입하기"
   },
   "home": {
     "heroBadge": "국제학교/유학 커리큘럼 전문",

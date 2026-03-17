@@ -31,16 +31,16 @@ export function Header() {
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Logo theme="light" />
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-semibold md:flex">
-            <Link href="/" className="text-primary/70 transition hover:text-primary">
-              {tNav('home')}
-            </Link>
-            <Link href="/tutors" className="text-primary/70 transition hover:text-primary">
+          <nav className="hidden items-center gap-1 text-sm font-semibold md:flex">
+            <Link href="/tutors" className="rounded-lg px-3 py-2 text-primary/70 transition hover:bg-primary/5 hover:text-primary">
               {tNav('findTutor')}
+            </Link>
+            <Link href="/tutor-mode" className="rounded-lg px-3 py-2 text-primary/70 transition hover:bg-primary/5 hover:text-primary">
+              {tNav('tutorMode')}
             </Link>
             <Link
               href={session?.user ? '/messages' : '/auth/login'}
-              className="inline-flex items-center gap-1 text-primary/70 transition hover:text-primary"
+              className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-primary/70 transition hover:bg-primary/5 hover:text-primary"
             >
               {tNav('messages')}
               {unreadCount > 0 ? (

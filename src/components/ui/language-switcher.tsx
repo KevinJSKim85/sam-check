@@ -8,18 +8,36 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
 
-  function switchLocale() {
-    const nextLocale = locale === 'ko' ? 'en' : 'ko';
-    router.replace(pathname, { locale: nextLocale });
+  function switchTo(target: 'ko' | 'en') {
+    if (target !== locale) {
+      router.replace(pathname, { locale: target });
+    }
   }
 
   return (
-    <button
-      type="button"
-      onClick={switchLocale}
-      className="rounded-md bg-primary px-4 py-2 text-white hover:opacity-90"
-    >
-      {locale === 'ko' ? 'English' : '한국어'}
-    </button>
+    <div className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold">
+      <button
+        type="button"
+        onClick={() => switchTo('ko')}
+        className={`rounded-full px-3 py-1 transition-all ${
+          locale === 'ko'
+            ? 'bg-primary text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-700'
+        }`}
+      >
+        KO
+      </button>
+      <button
+        type="button"
+        onClick={() => switchTo('en')}
+        className={`rounded-full px-3 py-1 transition-all ${
+          locale === 'en'
+            ? 'bg-primary text-white shadow-sm'
+            : 'text-slate-500 hover:text-slate-700'
+        }`}
+      >
+        EN
+      </button>
+    </div>
   );
 }
