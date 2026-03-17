@@ -10,7 +10,7 @@ import { Footer } from '@/components/layout/footer';
 import '../globals.css';
 
 const inter = Inter({
-  variable: '--font-sans',
+  variable: '--font-inter',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800', '900'],
 });
