@@ -5,6 +5,7 @@ import { SUBJECTS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { SubjectIcon } from '@/components/features/home/subject-icon';
 
 export default function HomePage() {
   const t = useTranslations('home');
@@ -67,17 +68,17 @@ export default function HomePage() {
       <section>
         <h2 className="text-2xl font-bold text-slate-900">{t('subjectsTitle')}</h2>
         <p className="mt-2 text-body">{t('subjectsDescription')}</p>
-        <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {SUBJECTS.map((subject) => (
             <Link
               key={subject.value}
               href={`/tutors?subject=${subject.value}`}
-              className="group rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+              className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
-              <p className="font-semibold text-slate-900">
+              <SubjectIcon subject={subject.value} className="size-6 shrink-0 text-primary/70 transition group-hover:text-primary" />
+              <span className="text-sm font-semibold text-slate-900 sm:text-base">
                 {locale === 'ko' ? subject.label.ko : subject.label.en}
-              </p>
-              <p className="mt-1 text-sm text-body group-hover:text-primary">{t('subjectCardAction')}</p>
+              </span>
             </Link>
           ))}
         </div>
