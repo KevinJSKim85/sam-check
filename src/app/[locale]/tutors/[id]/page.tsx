@@ -1,4 +1,5 @@
 import { MessageSquare, Monitor, ShieldCheck, UserRound } from 'lucide-react'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/auth'
@@ -6,6 +7,7 @@ import { BadgeList } from '@/components/features/badges/badge-list'
 import { ReviewCard } from '@/components/features/reviews/review-card'
 import { ReviewForm } from '@/components/features/reviews/review-form'
 import { StarDisplay } from '@/components/features/reviews/star-display'
+import { JsonLd } from '@/components/seo/json-ld'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +17,8 @@ import { Link } from '@/i18n/routing'
 import { CREDENTIAL_TYPE_LABELS, CURRICULA, SUBJECTS, TEACHING_MODE_LABELS } from '@/lib/constants'
 import { prisma } from '@/lib/db'
 import { formatKrw } from '@/lib/format'
+
+const SITE_URL = 'https://sam-check.vercel.app'
 
 function getInitials(name: string | null) {
   if (!name) return 'T'
@@ -37,18 +41,8 @@ function getCurriculumLabel(value: string) {
   return curriculum?.label ?? value
 }
 
-export default async function TutorDetailPage({
-  params,
-}: {
-  params: Promise<{ locale: string; id: string }>
-}) {
-  const { locale, id } = await params
-  const session = await auth()
-  const tTutor = await getTranslations('tutor')
-  const tReview = await getTranslations('review')
-  const activeLocale = locale
-
-  const tutor = await prisma.tutorProfile.findFirst({
+async function getPublishedTutorProfile(id: string) {
+  return prisma.tutorProfile.findFirst({
     where: {
       id,
       isPublished: true,
@@ -84,6 +78,100 @@ export default async function TutorDetailPage({
       },
     },
   })
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>
+}): Promise<Metadata> {
+  const { locale, id } = await params
+  const activeLocale = locale === 'en' ? 'en' : 'ko'
+  const tTutor = await getTranslations({ locale: activeLocale, namespace: 'tutor' })
+  const tutor = await prisma.tutorProfile.findFirst({
+    where: {
+      id,
+      isPublished: true,
+    },
+    select: {
+      id: true,
+      user: {
+        select: {
+          name: true,
+        },
+      },
+      headline: true,
+      subjects: true,
+      averageRating: true,
+      totalReviews: true,
+      updatedAt: true,
+    },
+  })
+
+  if (!tutor) {
+    return {
+      title: tTutor('notFoundTitle'),
+      description: tTutor('notFoundDescription'),
+      robots: {
+        index: false,
+        follow: false,
+      },
+    }
+  }
+
+  const tutorName = tutor.user.name ?? tTutor('unknownTutor')
+  const primarySubjects = tutor.subjects
+    .slice(0, 3)
+    .map((subject) => getSubjectLabel(subject, activeLocale))
+  const title =
+    primarySubjects.length > 0
+      ? `${tutorName} - ${primarySubjects.join(', ')}`
+      : tutorName
+  const description =
+    tutor.headline ??
+    (activeLocale === 'ko'
+      ? `${tutorName} 튜터의 과목, 리뷰, 인증 정보를 확인해보세요.`
+      : `See ${tutorName}'s subjects, reviews, and verified credentials.`)
+  const detailPath = `/${activeLocale}/tutors/${id}`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: detailPath,
+      languages: {
+        ko: `${SITE_URL}/ko/tutors/${id}`,
+        en: `${SITE_URL}/en/tutors/${id}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: detailPath,
+      type: 'profile',
+      images: [{ url: '/logo-light.png', width: 400, height: 200, alt: tutorName }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/logo-light.png'],
+    },
+  }
+}
+
+export default async function TutorDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>
+}) {
+  const { locale, id } = await params
+  const session = await auth()
+  const tTutor = await getTranslations('tutor')
+  const tReview = await getTranslations('review')
+  const activeLocale = locale
+
+  const tutor = await getPublishedTutorProfile(id)
 
   if (!tutor) {
     notFound()
@@ -99,9 +187,60 @@ export default async function TutorDetailPage({
       session.user.id !== tutor.userId &&
       !hasReviewed
   )
+  const tutorName = tutor.user.name ?? tTutor('unknownTutor')
+  const tutorProfileUrl = `${SITE_URL}/${locale}/tutors/${id}`
+  const tutorDetailSchemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: tutorName,
+      description: tutor.headline ?? tutor.bio,
+      image: tutor.user.image,
+      url: tutorProfileUrl,
+      knowsAbout: tutor.subjects.map((subject) => getSubjectLabel(subject, locale)),
+      alumniOf: tutor.university
+        ? {
+            '@type': 'CollegeOrUniversity',
+            name: tutor.university,
+          }
+        : undefined,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      name:
+        locale === 'ko'
+          ? `${tutorName} 1:1 튜터링`
+          : `${tutorName} 1:1 tutoring service`,
+      provider: {
+        '@type': 'Person',
+        name: tutorName,
+        url: tutorProfileUrl,
+      },
+      serviceType: locale === 'ko' ? '1:1 과외 수업' : '1:1 private tutoring',
+      areaServed: 'KR',
+      availableLanguage: ['ko', 'en'],
+      offers: tutor.hourlyRate
+        ? {
+            '@type': 'Offer',
+            price: tutor.hourlyRate,
+            priceCurrency: 'KRW',
+          }
+        : undefined,
+      aggregateRating:
+        tutor.totalReviews > 0
+          ? {
+              '@type': 'AggregateRating',
+              ratingValue: tutor.averageRating,
+              reviewCount: tutor.totalReviews,
+            }
+          : undefined,
+    },
+  ]
 
   return (
     <>
+      <JsonLd data={tutorDetailSchemas} />
       <div className="mx-auto w-full max-w-6xl px-4 py-10 pb-28 sm:px-6 lg:px-8 lg:pb-10">
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="relative bg-gradient-to-br from-primary-800 via-primary-700 to-accent-700 px-6 py-8 text-white sm:px-10 sm:py-10">

@@ -1,5 +1,44 @@
+import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
+
+const SITE_URL = 'https://sam-check.vercel.app';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const activeLocale = locale === 'en' ? 'en' : 'ko';
+  const tLegal = await getTranslations({ locale: activeLocale, namespace: 'legal' });
+  const title = tLegal('privacyTitle');
+  const description =
+    activeLocale === 'ko'
+      ? '쌤체크 개인정보처리방침을 확인하세요.'
+      : 'Review Sam-Check Privacy Policy.';
+  const path = `/${activeLocale}/privacy`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: path,
+      languages: {
+        ko: `${SITE_URL}/ko/privacy`,
+        en: `${SITE_URL}/en/privacy`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: path,
+      type: 'article',
+      images: [{ url: '/logo-light.png', width: 400, height: 200, alt: title }],
+    },
+  };
+}
 
 export default function PrivacyPolicyPage() {
   const tLegal = useTranslations('legal');
