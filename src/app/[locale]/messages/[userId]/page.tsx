@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { ErrorFallback } from '@/components/ui/error-fallback'
+import { ConversationBookingPanel } from '@/components/features/payments/conversation-booking-panel'
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Link } from '@/i18n/routing'
@@ -24,9 +25,12 @@ type ConversationResponse = {
     name: string | null
     image: string | null
     tutorProfileId: string | null
+    hourlyRate: number | null
+    subjects: string[]
   }
   messages: MessageItem[]
   currentUserId: string
+  currentUserRole: string
 }
 
 function getInitials(name: string | null) {
@@ -151,6 +155,17 @@ export default function ConversationPage() {
           </div>
         </div>
       </div>
+
+      <ConversationBookingPanel
+        partnerId={conversation.partner.id}
+        partnerName={conversation.partner.name}
+        tutorProfileId={conversation.partner.tutorProfileId}
+        tutorHourlyRate={conversation.partner.hourlyRate}
+        tutorSubjects={conversation.partner.subjects}
+        currentUserId={conversation.currentUserId}
+        currentUserRole={conversation.currentUserRole}
+        locale={locale}
+      />
 
       <div
         ref={scrollContainerRef}

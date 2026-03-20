@@ -23,9 +23,15 @@ model User {
   accounts         Account[]
   sessions         Session[]
   tutorProfile     TutorProfile?
-  sentMessages     Message[] @relation("sender")
-  receivedMessages Message[] @relation("receiver")
-  reviews          Review[]  @relation("author")
+  sentMessages     Message[]          @relation("sender")
+  receivedMessages Message[]          @relation("receiver")
+  reviews          Review[]           @relation("author")
+  studentBookings  Booking[]          @relation("studentBookings")
+  tutorBookings    Booking[]          @relation("tutorBookings")
+  buyerOrders      Order[]            @relation("buyerOrders")
+  sellerOrders     Order[]            @relation("sellerOrders")
+  tutorLedger      TutorLedgerEntry[]
+  payoutItems      PayoutItem[]
 }
 
 enum UserRole {
@@ -87,6 +93,8 @@ model TutorProfile {
 
   credentials Credential[]
   reviews     Review[]
+  bookings    Booking[]
+  orders      Order[]
 }
 
 enum TeachingMode {
@@ -166,4 +174,250 @@ model Review {
   updatedAt      DateTime     @updatedAt
 
   @@unique([tutorProfileId, authorId])
+}
+
+// ============ LESSONS, ORDERS & PAYMENTS ============
+
+model Booking {
+  id                    String        @id @default(cuid())
+  studentId             String
+  student               User          @relation("studentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+  tutorUserId           String
+  tutor                 User          @relation("tutorBookings", fields: [tutorUserId], references: [id], onDelete: Cascade)
+  tutorProfileId        String
+  tutorProfile          TutorProfile  @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  subject               String
+  curriculum            String?
+  requestedMessage      String?       @db.Text
+  startsAt              DateTime
+  endsAt                DateTime
+  durationMinutes       Int
+  hourlyRateSnapshotKrw Int
+  grossAmountKrw        Int
+  platformFeeBps        Int           @default(500)
+  platformFeeAmountKrw  Int
+  tutorNetAmountKrw     Int
+  status                BookingStatus @default(REQUESTED)
+  cancelReason          String?
+  acceptedAt            DateTime?
+  declinedAt            DateTime?
+  confirmedAt           DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  order              Order?
+  tutorLedgerEntries TutorLedgerEntry[]
+
+  @@index([studentId, status])
+  @@index([tutorUserId, status])
+  @@index([startsAt, status])
+}
+
+enum BookingStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  CANCELED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+}
+
+model Order {
+  id                    String       @id @default(cuid())
+  bookingId             String       @unique
+  booking               Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  buyerId               String
+  buyer                 User         @relation("buyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerTutorId         String
+  sellerTutor           User         @relation("sellerOrders", fields: [sellerTutorId], references: [id], onDelete: Cascade)
+  sellerTutorProfileId  String
+  sellerTutorProfile    TutorProfile @relation(fields: [sellerTutorProfileId], references: [id], onDelete: Cascade)
+  currency              String       @default("KRW")
+  merchantOrderNo       String       @unique
+  hourlyRateSnapshotKrw Int
+  durationMinutes       Int
+  grossAmountKrw        Int
+  platformFeeBps        Int          @default(500)
+  platformFeeAmountKrw  Int
+  tutorNetAmountKrw     Int
+  status                OrderStatus  @default(PENDING_PAYMENT)
+  paidAt                DateTime?
+  fulfilledAt           DateTime?
+  canceledAt            DateTime?
+  refundedAt            DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  payment            Payment?
+  refunds            Refund[]
+  tutorLedgerEntries TutorLedgerEntry[]
+
+  @@index([buyerId, status])
+  @@index([sellerTutorId, status])
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  FULFILLED
+  CANCELED
+  REFUNDED
+}
+
+model Payment {
+  id                 String          @id @default(cuid())
+  orderId            String          @unique
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider           PaymentProvider @default(TOSS_PAYMENTS)
+  providerPaymentId  String?         @unique
+  merchantOrderNo    String          @unique
+  requestedAmountKrw Int
+  paidAmountKrw      Int?
+  method             PaymentMethod?
+  status             PaymentStatus   @default(CREATED)
+  rawProviderPayload Json?
+  approvedAt         DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  events  PaymentEvent[]
+  ledger  TutorLedgerEntry[]
+  refunds Refund[]
+}
+
+enum PaymentProvider {
+  TOSS_PAYMENTS
+}
+
+enum PaymentMethod {
+  CARD
+  TRANSFER
+  VIRTUAL_ACCOUNT
+  MOBILE
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+  REFUNDED
+  DISPUTED
+}
+
+model PaymentEvent {
+  id              String   @id @default(cuid())
+  paymentId       String
+  payment         Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  providerEventId String?  @unique
+  type            String
+  rawPayload      Json?
+  receivedAt      DateTime @default(now())
+
+  @@index([paymentId, receivedAt])
+}
+
+model TutorLedgerEntry {
+  id           String            @id @default(cuid())
+  tutorId      String
+  tutor        User              @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  bookingId    String?
+  booking      Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  orderId      String?
+  order        Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  paymentId    String?
+  payment      Payment?          @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  type         LedgerEntryType
+  status       LedgerEntryStatus @default(HELD)
+  amountKrw    Int
+  availableAt  DateTime?
+  description  String?
+  payoutItemId String?
+  payoutItem   PayoutItem?       @relation(fields: [payoutItemId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+
+  @@index([tutorId, status, availableAt])
+}
+
+enum LedgerEntryType {
+  EARNING
+  REVERSAL
+  ADJUSTMENT
+}
+
+enum LedgerEntryStatus {
+  HELD
+  AVAILABLE
+  LOCKED
+  PAID
+  REVERSED
+}
+
+model PayoutBatch {
+  id          String            @id @default(cuid())
+  periodStart DateTime
+  periodEnd   DateTime
+  status      PayoutBatchStatus @default(DRAFT)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  items PayoutItem[]
+}
+
+enum PayoutBatchStatus {
+  DRAFT
+  SENT
+  CLOSED
+}
+
+model PayoutItem {
+  id        String           @id @default(cuid())
+  batchId   String
+  batch     PayoutBatch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  tutorId   String
+  tutor     User             @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  amountKrw Int
+  status    PayoutItemStatus @default(SCHEDULED)
+  bankRef   String?
+  paidAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  ledgerEntries TutorLedgerEntry[]
+
+  @@index([tutorId, status])
+}
+
+enum PayoutItemStatus {
+  SCHEDULED
+  SENT
+  PAID
+  FAILED
+}
+
+model Refund {
+  id               String       @id @default(cuid())
+  orderId          String
+  order            Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentId        String
+  payment          Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  providerRefundId String?      @unique
+  amountKrw        Int
+  reason           String?
+  status           RefundStatus @default(REQUESTED)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([paymentId, status])
+}
+
+enum RefundStatus {
+  REQUESTED
+  SUCCEEDED
+  FAILED
 }

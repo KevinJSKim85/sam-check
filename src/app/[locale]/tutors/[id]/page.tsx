@@ -7,6 +7,7 @@ import { BadgeList } from '@/components/features/badges/badge-list'
 import { ReviewCard } from '@/components/features/reviews/review-card'
 import { ReviewForm } from '@/components/features/reviews/review-form'
 import { StarDisplay } from '@/components/features/reviews/star-display'
+import { LessonRequestPanel } from '@/components/features/payments/lesson-request-panel'
 import { JsonLd } from '@/components/seo/json-ld'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -243,18 +244,18 @@ export default async function TutorDetailPage({
       <JsonLd data={tutorDetailSchemas} />
       <div className="mx-auto w-full max-w-6xl px-4 py-10 pb-28 sm:px-6 lg:px-8 lg:pb-10">
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="relative bg-gradient-to-br from-primary-800 via-primary-700 to-accent-700 px-6 py-8 text-white sm:px-10 sm:py-10">
+          <div className="relative bg-primary px-6 py-8 text-primary-foreground sm:px-10 sm:py-10">
             <div className="absolute -top-16 right-8 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
             <div className="absolute -bottom-20 left-8 h-44 w-44 rounded-full bg-cta/20 blur-3xl" />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
               <Avatar className="size-24 ring-4 ring-white/35 sm:size-28" size="lg">
                 <AvatarImage src={tutor.user.image ?? undefined} alt={tutor.user.name ?? tTutor('unknownTutor')} />
-                <AvatarFallback className="text-3xl font-bold text-primary-700">{getInitials(tutor.user.name)}</AvatarFallback>
+                <AvatarFallback className="border border-white/40 bg-white/90 text-3xl font-bold text-primary-700">{getInitials(tutor.user.name)}</AvatarFallback>
               </Avatar>
 
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{tutor.user.name ?? tTutor('unknownTutor')}</h1>
+                  <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{tutor.user.name ?? tTutor('unknownTutor')}</h1>
                   {tutor.credentials.length > 0 && (
                     <Badge className="shrink-0 gap-1 border-white/30 bg-white/20 text-white">
                       <ShieldCheck className="size-3.5" />
@@ -407,6 +408,16 @@ export default async function TutorDetailPage({
                     <MessageSquare className="size-4" />
                     {tTutor('sendMessage')}
                   </Button>
+
+                  {session?.user?.role === 'STUDENT' ? (
+                    <LessonRequestPanel
+                      tutorProfileId={tutor.id}
+                      tutorName={tutor.user.name ?? tTutor('unknownTutor')}
+                      hourlyRateKrw={tutor.hourlyRate ?? 0}
+                      subjects={tutor.subjects}
+                      defaultSubject={tutor.subjects[0]}
+                    />
+                  ) : null}
                 </CardContent>
               </Card>
             </div>

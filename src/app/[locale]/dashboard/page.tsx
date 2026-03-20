@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { requireAuth } from '@/lib/auth-utils'
 import { prisma } from '@/lib/db'
+import { formatKrw } from '@/lib/format'
 
 function getCompleteness(profile: {
   headline: string | null
@@ -33,7 +34,7 @@ export default async function DashboardPage() {
   const session = await requireAuth()
   const tDashboard = await getTranslations('dashboard')
 
-  const [profile, unreadMessages, recentReviews] = await Promise.all([
+  const [profile, unreadMessages, recentReviews, activeLessonRequests, heldLedger, availableLedger] = await Promise.all([
     prisma.tutorProfile.findUnique({
       where: { userId: session.user.id },
       include: { credentials: true },
@@ -54,12 +55,36 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 5,
     }),
+    prisma.booking.count({
+      where: {
+        tutorUserId: session.user.id,
+        status: {
+          in: ['REQUESTED', 'ACCEPTED', 'CONFIRMED'],
+        },
+      },
+    }),
+    prisma.tutorLedgerEntry.aggregate({
+      where: {
+        tutorId: session.user.id,
+        status: 'HELD',
+      },
+      _sum: { amountKrw: true },
+    }),
+    prisma.tutorLedgerEntry.aggregate({
+      where: {
+        tutorId: session.user.id,
+        status: 'AVAILABLE',
+      },
+      _sum: { amountKrw: true },
+    }),
   ])
 
   const approvedCount = profile?.credentials.filter((item) => item.status === 'APPROVED').length ?? 0
   const pendingCount = profile?.credentials.filter((item) => item.status === 'PENDING' || item.status === 'UNDER_REVIEW').length ?? 0
   const rejectedCount = profile?.credentials.filter((item) => item.status === 'REJECTED').length ?? 0
   const profileCompleteness = profile ? getCompleteness(profile) : 0
+  const heldBalance = heldLedger._sum.amountKrw ?? 0
+  const availableBalance = availableLedger._sum.amountKrw ?? 0
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
@@ -114,6 +139,36 @@ export default async function DashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold text-slate-900">{recentReviews.length}</p>
             <p className="mt-2 text-sm text-body">{tDashboard('recentReviewsHint')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>수업 요청</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{activeLessonRequests}</p>
+            <p className="mt-2 text-sm text-body">승인 대기 또는 결제 대기 중인 수업 요청</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>정산 예정 금액</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{formatKrw(heldBalance, 'ko')}</p>
+            <p className="mt-2 text-sm text-body">수업 완료 후 홀드 기간 중인 금액</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>출금 가능 금액</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-primary">{formatKrw(availableBalance, 'ko')}</p>
+            <p className="mt-2 text-sm text-body">수동 정산 대상으로 집계된 금액</p>
           </CardContent>
         </Card>
       </section>

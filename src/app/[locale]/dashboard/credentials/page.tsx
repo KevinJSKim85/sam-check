@@ -319,7 +319,7 @@ export default function CredentialsDashboardPage() {
             <p className="mt-1 text-sm text-body">{tCredential('subtitle')}</p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger render={<Button variant="cta" className="min-h-11 w-full sm:w-auto" />} onClick={resetForm}>
+            <DialogTrigger className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-cta-600 sm:w-auto" onClick={resetForm}>
               {tCredential('addCredential')}
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

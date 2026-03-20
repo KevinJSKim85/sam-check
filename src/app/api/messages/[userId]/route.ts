@@ -20,6 +20,8 @@ export async function GET(
           select: {
             id: true,
             isPublished: true,
+            hourlyRate: true,
+            subjects: true,
           },
         },
       },
@@ -54,12 +56,15 @@ export async function GET(
         name: partner.name,
         image: partner.image,
         tutorProfileId: partner.tutorProfile?.isPublished ? partner.tutorProfile.id : null,
+        hourlyRate: partner.tutorProfile?.isPublished ? partner.tutorProfile.hourlyRate : null,
+        subjects: partner.tutorProfile?.isPublished ? partner.tutorProfile.subjects : [],
       },
       messages: messages.map((message) => ({
         ...message,
         createdAt: message.createdAt.toISOString(),
       })),
       currentUserId: session.user.id,
+      currentUserRole: session.user.role,
     })
   } catch (error) {
     return NextResponse.json(

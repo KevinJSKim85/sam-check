@@ -3,11 +3,12 @@ import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link } from '@/i18n/routing'
 import { prisma } from '@/lib/db'
+import { formatKrw } from '@/lib/format'
 
 export default async function AdminPage() {
   const tAdmin = await getTranslations('admin')
 
-  const [pendingCredentials, totalTutors, totalStudents, totalMessages] = await Promise.all([
+  const [pendingCredentials, totalTutors, totalStudents, totalMessages, paidOrders, paidVolume, platformFees, pendingPayouts] = await Promise.all([
     prisma.credential.count({
       where: {
         status: {
@@ -26,7 +27,42 @@ export default async function AdminPage() {
       },
     }),
     prisma.message.count(),
+    prisma.order.count({
+      where: {
+        status: {
+          in: ['PAID', 'FULFILLED'],
+        },
+      },
+    }),
+    prisma.order.aggregate({
+      where: {
+        status: {
+          in: ['PAID', 'FULFILLED'],
+        },
+      },
+      _sum: { grossAmountKrw: true },
+    }),
+    prisma.order.aggregate({
+      where: {
+        status: {
+          in: ['PAID', 'FULFILLED'],
+        },
+      },
+      _sum: { platformFeeAmountKrw: true },
+    }),
+    prisma.tutorLedgerEntry.aggregate({
+      where: {
+        status: {
+          in: ['HELD', 'AVAILABLE'],
+        },
+      },
+      _sum: { amountKrw: true },
+    }),
   ])
+
+  const paidVolumeKrw = paidVolume._sum.grossAmountKrw ?? 0
+  const platformFeeKrw = platformFees._sum.platformFeeAmountKrw ?? 0
+  const pendingPayoutKrw = pendingPayouts._sum.amountKrw ?? 0
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
@@ -69,6 +105,42 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-slate-900">{totalMessages}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>유료 주문 수</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{paidOrders}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>누적 결제액</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{formatKrw(paidVolumeKrw, 'ko')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>플랫폼 수수료 수익</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-primary">{formatKrw(platformFeeKrw, 'ko')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>미정산 잔액</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{formatKrw(pendingPayoutKrw, 'ko')}</p>
           </CardContent>
         </Card>
       </section>
