@@ -82,6 +82,7 @@
     "invalidEmail": "Please enter a valid email address.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "emailAlreadyInUse": "An account with this email already exists.",
+    "verificationEmailSendFailed": "Failed to send the verification email. Check the mail service configuration and try again.",
     "goToLogin": "Go to log in",
     "backHome": "Back to home",
     "verifyStatusTitle": {

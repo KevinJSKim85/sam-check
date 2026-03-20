@@ -6,6 +6,7 @@ import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
 import { prisma } from '@/lib/db';
+import { sendVerificationEmail } from '@/lib/email';
 
 const allowedProviders = ['kakao', 'google'] as const;
 type Provider = (typeof allowedProviders)[number];
@@ -57,7 +58,11 @@ async function createEmailVerificationToken(email: string, locale: string) {
   });
 
   const verifyUrl = `${getBaseUrl()}/${locale}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-  console.log(`[auth] Verification email URL for ${email}: ${verifyUrl}`);
+  await sendVerificationEmail({
+    email,
+    verifyUrl,
+    locale,
+  });
 }
 
 function isProvider(value: string): value is Provider {
@@ -107,7 +112,7 @@ export async function registerWithEmailAction(
 
   const hashedPassword = await hash(password, 12);
 
-  await prisma.user.create({
+  const createdUser = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
@@ -115,9 +120,20 @@ export async function registerWithEmailAction(
       role,
       locale,
     },
+    select: { id: true },
   });
 
-  await createEmailVerificationToken(email, locale);
+  try {
+    await createEmailVerificationToken(email, locale);
+  } catch (error) {
+    await prisma.$transaction([
+      prisma.verificationToken.deleteMany({ where: { identifier: email } }),
+      prisma.user.delete({ where: { id: createdUser.id } }),
+    ]);
+
+    console.error('[auth] Failed to send verification email', error);
+    return { error: 'verificationEmailSendFailed' };
+  }
 
   redirect(`/${locale}/auth/verify-email?status=sent&email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(redirectTo)}`);
 }

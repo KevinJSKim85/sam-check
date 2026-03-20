@@ -176,7 +176,7 @@ export default function HomePage() {
 								{[
 									"SAT/ACT",
 									"AP/IB",
-									"TOEFL/DELF",
+									"TOEFL/IELTS",
 									t("trustBadgeSchoolCert"),
 									t("trustBadgeExperience"),
 								].map((label) => (
