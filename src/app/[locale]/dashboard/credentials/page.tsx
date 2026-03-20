@@ -14,7 +14,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -318,10 +317,20 @@ export default function CredentialsDashboardPage() {
             <CardTitle className="text-2xl">{tCredential('myCredentials')}</CardTitle>
             <p className="mt-1 text-sm text-body">{tCredential('subtitle')}</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-cta-600 sm:w-auto" onClick={resetForm}>
+          <>
+            <Button
+              type="button"
+              variant="cta"
+              className="min-h-11 w-full sm:w-auto"
+              onClick={() => {
+                resetForm()
+                setDialogOpen(true)
+              }}
+            >
               {tCredential('addCredential')}
-            </DialogTrigger>
+            </Button>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>{resubmitId ? tCredential('resubmitTitle') : tCredential('addCredential')}</DialogTitle>
@@ -477,7 +486,8 @@ export default function CredentialsDashboardPage() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </>
         </CardHeader>
 
         <CardContent>

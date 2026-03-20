@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -82,10 +81,18 @@ export function LessonRequestPanel({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="inline-flex min-h-11 items-center justify-center rounded-lg bg-cta px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-cta-600">
+    <>
+      <Button
+        type="button"
+        variant="cta"
+        size="lg"
+        className="min-h-11"
+        onClick={() => setOpen(true)}
+      >
         {canRequest ? '수업 요청하기' : '결제 준비중'}
-      </DialogTrigger>
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{tutorName} 튜터에게 수업 요청</DialogTitle>
@@ -183,6 +190,7 @@ export function LessonRequestPanel({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   )
 }
